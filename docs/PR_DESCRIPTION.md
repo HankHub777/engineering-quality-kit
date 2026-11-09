@@ -10,6 +10,7 @@ A zero-dependency Python CLI (`eqk`), with the commands `inspect` → `plan` →
 - 4 example repos
 - the ADRs
 - the PoC evidence
+- the Apache-2.0 license
 
 ## Evidence
 
@@ -30,6 +31,5 @@ A zero-dependency Python CLI (`eqk`), with the commands `inspect` → `plan` →
 - No real-world repos, only the bundled examples.
 - The ESLint and Vale checks never actually ran.
 - The skill's behavioural evals were not run.
-- No license has been chosen.
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)

@@ -79,4 +79,5 @@ Acceptance tests need ruff, pytest, mypy, tsc, node/npm and markdownlint-cli2 on
 
 ## License
 
-Not chosen yet (MIT or Apache-2.0 proposed) — must be decided before publishing.
+[Apache License 2.0](LICENSE). Contributions are accepted under the same
+license (Apache-2.0 §5).
