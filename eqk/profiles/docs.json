@@ -1,0 +1,14 @@
+{
+  "id": "docs",
+  "version": "0.1.0",
+  "description": "Documentation repos: Markdown structure lint; Vale prose lint only if the repo opts in with .vale.ini.",
+  "checks": [
+    {"id": "docs.markdownlint", "tool": "markdownlint-cli2", "args": ["**/*.md", "#node_modules", "#.venv", "#.quality"], "applies_to": "docs", "gate": true,
+     "install_hint": "npm install --save-dev markdownlint-cli2"},
+    {"id": "docs.vale", "tool": "vale", "args": ["."], "applies_to": "docs", "requires": "vale_config", "gate": false,
+     "install_hint": "see https://vale.sh/docs/install"}
+  ],
+  "scaffold": [
+    {"path": ".markdownlint.jsonc", "template": "markdownlint.jsonc", "applies_to": "docs", "skip_if": "markdownlint_config"}
+  ]
+}

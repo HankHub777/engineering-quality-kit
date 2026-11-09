@@ -1,0 +1,169 @@
+{
+  "schema_version": "0.1",
+  "run_id": "20261109T145652Z-e7d385",
+  "generated_at": "2026-11-09T14:56:53Z",
+  "producer": {
+    "name": "eqk",
+    "version": "0.1.0"
+  },
+  "project": {
+    "id": "proj-32e6d210691d"
+  },
+  "git": {
+    "is_repo": true,
+    "commit": "9cac3bc279f763ee4c80ea9abb6102438a274b2b",
+    "dirty": true
+  },
+  "profile": {
+    "id": "python-data",
+    "version": "0.1.0"
+  },
+  "overall": {
+    "status": "fail",
+    "counts": {
+      "fail": 1,
+      "exec_executed": 4,
+      "pass": 2,
+      "not_applicable": 2,
+      "exec_not_run": 2,
+      "warning": 1
+    }
+  },
+  "checks": [
+    {
+      "check_id": "py.lint",
+      "tool": {
+        "name": "ruff",
+        "version": "ruff 0.17.4",
+        "source": "PATH"
+      },
+      "gate": true,
+      "execution_status": "executed",
+      "result_status": "fail",
+      "started_at": "2026-11-09T14:56:52Z",
+      "duration_ms": 9,
+      "exit_code": 1,
+      "evidence_ref": "evidence/20261109T145652Z-e7d385/py.lint.log",
+      "summary": {
+        "errors": [
+          "inventory/stock.py:1:1: I001 [*] Import block is un-sorted or un-formatted",
+          "inventory/stock.py:1:8: F401 [*] `os` imported but unused",
+          "inventory/stock.py:4:1: E402 Module level import not at top of file",
+          "Found 3 errors."
+        ],
+        "warnings": []
+      },
+      "limitations": []
+    },
+    {
+      "check_id": "py.test",
+      "tool": {
+        "name": "pytest",
+        "version": "pytest 9.2.0",
+        "source": "PATH"
+      },
+      "gate": true,
+      "execution_status": "executed",
+      "result_status": "pass",
+      "started_at": "2026-11-09T14:56:52Z",
+      "duration_ms": 90,
+      "exit_code": 0,
+      "evidence_ref": "evidence/20261109T145652Z-e7d385/py.test.log",
+      "summary": {
+        "errors": [],
+        "warnings": []
+      },
+      "limitations": []
+    },
+    {
+      "check_id": "ts.typecheck",
+      "tool": {
+        "name": "tsc",
+        "version": null,
+        "source": null
+      },
+      "gate": true,
+      "execution_status": "not_run",
+      "result_status": "not_applicable",
+      "started_at": null,
+      "duration_ms": null,
+      "exit_code": null,
+      "evidence_ref": null,
+      "summary": {
+        "errors": [],
+        "warnings": []
+      },
+      "limitations": [
+        "no typescript files detected"
+      ]
+    },
+    {
+      "check_id": "js.test",
+      "tool": {
+        "name": "npm",
+        "version": null,
+        "source": null
+      },
+      "gate": true,
+      "execution_status": "not_run",
+      "result_status": "not_applicable",
+      "started_at": null,
+      "duration_ms": null,
+      "exit_code": null,
+      "evidence_ref": null,
+      "summary": {
+        "errors": [],
+        "warnings": []
+      },
+      "limitations": [
+        "no javascript files detected"
+      ]
+    },
+    {
+      "check_id": "py.format",
+      "tool": {
+        "name": "ruff",
+        "version": "ruff 0.17.4",
+        "source": "PATH"
+      },
+      "gate": false,
+      "execution_status": "executed",
+      "result_status": "warning",
+      "started_at": "2026-11-09T14:56:52Z",
+      "duration_ms": 9,
+      "exit_code": 1,
+      "evidence_ref": "evidence/20261109T145652Z-e7d385/py.format.log",
+      "summary": {
+        "errors": [],
+        "warnings": [
+          "--> inventory/stock.py:2:1"
+        ]
+      },
+      "limitations": []
+    },
+    {
+      "check_id": "py.types",
+      "tool": {
+        "name": "mypy",
+        "version": "mypy 2.4.1 (compiled: yes)",
+        "source": "PATH"
+      },
+      "gate": false,
+      "execution_status": "executed",
+      "result_status": "pass",
+      "started_at": "2026-11-09T14:56:53Z",
+      "duration_ms": 70,
+      "exit_code": 0,
+      "evidence_ref": "evidence/20261109T145652Z-e7d385/py.types.log",
+      "summary": {
+        "errors": [],
+        "warnings": []
+      },
+      "limitations": []
+    }
+  ],
+  "limitations": [
+    "working tree is dirty: git.commit does not fully identify the verified content",
+    "results cover only the checks listed; they are not a statement about overall software correctness"
+  ]
+}

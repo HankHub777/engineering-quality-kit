@@ -1,0 +1,162 @@
+{
+  "schema_version": "0.1",
+  "run_id": "20261109T145652Z-f9579b",
+  "generated_at": "2026-11-09T14:56:52Z",
+  "producer": {
+    "name": "eqk",
+    "version": "0.1.0"
+  },
+  "project": {
+    "id": "proj-32e6d210691d"
+  },
+  "git": {
+    "is_repo": true,
+    "commit": "9cac3bc279f763ee4c80ea9abb6102438a274b2b",
+    "dirty": false
+  },
+  "profile": {
+    "id": "python-data",
+    "version": "0.1.0"
+  },
+  "overall": {
+    "status": "incomplete",
+    "counts": {
+      "pass": 3,
+      "exec_executed": 3,
+      "unknown": 1,
+      "exec_not_run": 3,
+      "not_applicable": 2
+    }
+  },
+  "checks": [
+    {
+      "check_id": "py.lint",
+      "tool": {
+        "name": "ruff",
+        "version": "ruff 0.17.4",
+        "source": "PATH"
+      },
+      "gate": true,
+      "execution_status": "executed",
+      "result_status": "pass",
+      "started_at": "2026-11-09T14:56:52Z",
+      "duration_ms": 8,
+      "exit_code": 0,
+      "evidence_ref": "evidence/20261109T145652Z-f9579b/py.lint.log",
+      "summary": {
+        "errors": [],
+        "warnings": []
+      },
+      "limitations": []
+    },
+    {
+      "check_id": "py.test",
+      "tool": {
+        "name": "pytest",
+        "version": null,
+        "source": null
+      },
+      "gate": true,
+      "execution_status": "not_run",
+      "result_status": "unknown",
+      "started_at": null,
+      "duration_ms": null,
+      "exit_code": null,
+      "evidence_ref": null,
+      "summary": {
+        "errors": [],
+        "warnings": []
+      },
+      "limitations": [
+        "not run: excluded by --skip/--only; this is NOT a pass"
+      ]
+    },
+    {
+      "check_id": "ts.typecheck",
+      "tool": {
+        "name": "tsc",
+        "version": null,
+        "source": null
+      },
+      "gate": true,
+      "execution_status": "not_run",
+      "result_status": "not_applicable",
+      "started_at": null,
+      "duration_ms": null,
+      "exit_code": null,
+      "evidence_ref": null,
+      "summary": {
+        "errors": [],
+        "warnings": []
+      },
+      "limitations": [
+        "no typescript files detected"
+      ]
+    },
+    {
+      "check_id": "js.test",
+      "tool": {
+        "name": "npm",
+        "version": null,
+        "source": null
+      },
+      "gate": true,
+      "execution_status": "not_run",
+      "result_status": "not_applicable",
+      "started_at": null,
+      "duration_ms": null,
+      "exit_code": null,
+      "evidence_ref": null,
+      "summary": {
+        "errors": [],
+        "warnings": []
+      },
+      "limitations": [
+        "no javascript files detected"
+      ]
+    },
+    {
+      "check_id": "py.format",
+      "tool": {
+        "name": "ruff",
+        "version": "ruff 0.17.4",
+        "source": "PATH"
+      },
+      "gate": false,
+      "execution_status": "executed",
+      "result_status": "pass",
+      "started_at": "2026-11-09T14:56:52Z",
+      "duration_ms": 8,
+      "exit_code": 0,
+      "evidence_ref": "evidence/20261109T145652Z-f9579b/py.format.log",
+      "summary": {
+        "errors": [],
+        "warnings": []
+      },
+      "limitations": []
+    },
+    {
+      "check_id": "py.types",
+      "tool": {
+        "name": "mypy",
+        "version": "mypy 2.4.1 (compiled: yes)",
+        "source": "PATH"
+      },
+      "gate": false,
+      "execution_status": "executed",
+      "result_status": "pass",
+      "started_at": "2026-11-09T14:56:52Z",
+      "duration_ms": 65,
+      "exit_code": 0,
+      "evidence_ref": "evidence/20261109T145652Z-f9579b/py.types.log",
+      "summary": {
+        "errors": [],
+        "warnings": []
+      },
+      "limitations": []
+    }
+  ],
+  "limitations": [
+    "results cover only the checks listed; they are not a statement about overall software correctness"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "name": "ts-web-demo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test \"test/**/*.test.ts\""
+  },
+  "devDependencies": {
+    "typescript": "^5.9.0"
+  }
+}

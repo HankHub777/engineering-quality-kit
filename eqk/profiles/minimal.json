@@ -1,0 +1,16 @@
+{
+  "id": "minimal",
+  "version": "0.1.0",
+  "description": "Smallest useful gate: lint + the project's own tests. Safe default for existing repos.",
+  "checks": [
+    {"id": "py.lint", "tool": "ruff", "args": ["check", "--output-format=concise", "."], "applies_to": "python", "gate": true,
+     "install_hint": "pip install ruff"},
+    {"id": "py.test", "tool": "pytest", "args": ["-q"], "applies_to": "python", "requires": "python_tests", "gate": true,
+     "exit_codes": {"0": "pass", "5": "unknown"}, "install_hint": "pip install pytest"},
+    {"id": "ts.typecheck", "tool": "tsc", "args": ["--noEmit", "-p", "."], "applies_to": "typescript", "requires": "tsconfig", "gate": true,
+     "install_hint": "npm install --save-dev typescript"},
+    {"id": "js.test", "tool": "npm", "args": ["test", "--silent"], "applies_to": "javascript", "requires": "npm_test_script", "gate": true,
+     "install_hint": "install Node.js / npm"}
+  ],
+  "scaffold": []
+}

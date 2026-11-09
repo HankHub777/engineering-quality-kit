@@ -1,0 +1,15 @@
+[project]
+name = "inventory"
+version = "1.4.0"
+requires-python = ">=3.9"
+
+# The team's existing lint policy. eqk must keep this exactly as-is.
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

@@ -1,0 +1,8 @@
+// Added by engineering-quality-kit (profile: docs; used by the kit itself). Safe to edit or delete.
+{
+  "default": true,
+  // Line length is a style preference, not a correctness signal; CJK prose breaks it constantly.
+  "MD013": false,
+  // Table pipe spacing is cosmetic; recent markdownlint versions flag most hand-written tables.
+  "MD060": false
+}

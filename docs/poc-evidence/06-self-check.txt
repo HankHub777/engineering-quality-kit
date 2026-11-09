@@ -1,0 +1,17 @@
+# Quality result: PASS
+profile python-data 0.1.0 · commit 1f6ffc59f5 (dirty) · run 20261109T145653Z-13740b
+
+- PASS py.lint (gate)
+- PASS py.test (gate)
+- n/a  ts.typecheck (gate) [not_run]
+    · requires tsconfig (not present in repo)
+- n/a  js.test (gate) [not_run]
+    · no javascript files detected
+- PASS py.format (info)
+- PASS py.types (info)
+
+Limitations:
+- working tree is dirty: git.commit does not fully identify the verified content
+- results cover only the checks listed; they are not a statement about overall software correctness
+
+exit=0

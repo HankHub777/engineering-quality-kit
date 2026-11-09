@@ -1,0 +1,22 @@
+# Quality result: FAIL
+profile python-data 0.1.0 · commit 9cac3bc279 (dirty) · run 20261109T145652Z-e7d385
+
+- FAIL py.lint (gate)
+    ✗ inventory/stock.py:1:1: I001 [*] Import block is un-sorted or un-formatted
+    ✗ inventory/stock.py:1:8: F401 [*] `os` imported but unused
+    ✗ inventory/stock.py:4:1: E402 Module level import not at top of file
+    ✗ Found 3 errors.
+- PASS py.test (gate)
+- n/a  ts.typecheck (gate) [not_run]
+    · no typescript files detected
+- n/a  js.test (gate) [not_run]
+    · no javascript files detected
+- WARN py.format (info)
+    ! --> inventory/stock.py:2:1
+- PASS py.types (info)
+
+Limitations:
+- working tree is dirty: git.commit does not fully identify the verified content
+- results cover only the checks listed; they are not a statement about overall software correctness
+
+exit=1
