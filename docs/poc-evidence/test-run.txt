@@ -26,7 +26,7 @@ test_docs (tests.test_acceptance.DocsProfile.test_docs) ... ok
 test_verify_only (tests.test_acceptance.VerifyWithoutAdoption.test_verify_only) ... ok
 
 ----------------------------------------------------------------------
-Ran 26 tests in 7.073s
+Ran 26 tests in 6.865s
 
 OK
 unittest exit=0

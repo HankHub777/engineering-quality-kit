@@ -1,17 +1,17 @@
 {
   "schema_version": "0.1",
-  "run_id": "20261109T143549Z-35df6e",
-  "generated_at": "2026-11-09T14:35:49Z",
+  "run_id": "20261109T145652Z-e7d385",
+  "generated_at": "2026-11-09T14:56:53Z",
   "producer": {
     "name": "eqk",
     "version": "0.1.0"
   },
   "project": {
-    "id": "proj-6d14bc678c9d"
+    "id": "proj-32e6d210691d"
   },
   "git": {
     "is_repo": true,
-    "commit": "26e9170992882813d58b022accf609e116de687c",
+    "commit": "9cac3bc279f763ee4c80ea9abb6102438a274b2b",
     "dirty": true
   },
   "profile": {
@@ -40,10 +40,10 @@
       "gate": true,
       "execution_status": "executed",
       "result_status": "fail",
-      "started_at": "2026-11-09T14:35:49Z",
-      "duration_ms": 7,
+      "started_at": "2026-11-09T14:56:52Z",
+      "duration_ms": 9,
       "exit_code": 1,
-      "evidence_ref": "evidence/20261109T143549Z-35df6e/py.lint.log",
+      "evidence_ref": "evidence/20261109T145652Z-e7d385/py.lint.log",
       "summary": {
         "errors": [
           "inventory/stock.py:1:1: I001 [*] Import block is un-sorted or un-formatted",
@@ -65,10 +65,10 @@
       "gate": true,
       "execution_status": "executed",
       "result_status": "pass",
-      "started_at": "2026-11-09T14:35:49Z",
-      "duration_ms": 93,
+      "started_at": "2026-11-09T14:56:52Z",
+      "duration_ms": 90,
       "exit_code": 0,
-      "evidence_ref": "evidence/20261109T143549Z-35df6e/py.test.log",
+      "evidence_ref": "evidence/20261109T145652Z-e7d385/py.test.log",
       "summary": {
         "errors": [],
         "warnings": []
@@ -129,10 +129,10 @@
       "gate": false,
       "execution_status": "executed",
       "result_status": "warning",
-      "started_at": "2026-11-09T14:35:49Z",
-      "duration_ms": 10,
+      "started_at": "2026-11-09T14:56:52Z",
+      "duration_ms": 9,
       "exit_code": 1,
-      "evidence_ref": "evidence/20261109T143549Z-35df6e/py.format.log",
+      "evidence_ref": "evidence/20261109T145652Z-e7d385/py.format.log",
       "summary": {
         "errors": [],
         "warnings": [
@@ -151,10 +151,10 @@
       "gate": false,
       "execution_status": "executed",
       "result_status": "pass",
-      "started_at": "2026-11-09T14:35:49Z",
-      "duration_ms": 73,
+      "started_at": "2026-11-09T14:56:53Z",
+      "duration_ms": 70,
       "exit_code": 0,
-      "evidence_ref": "evidence/20261109T143549Z-35df6e/py.types.log",
+      "evidence_ref": "evidence/20261109T145652Z-e7d385/py.types.log",
       "summary": {
         "errors": [],
         "warnings": []
