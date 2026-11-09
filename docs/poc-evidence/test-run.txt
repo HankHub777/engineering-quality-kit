@@ -1,0 +1,32 @@
+test_not_run_pass_rejected (tests.test_unit.Invariants.test_not_run_pass_rejected) ... ok
+test_ok (tests.test_unit.Invariants.test_ok) ... ok
+test_pass_without_evidence_rejected (tests.test_unit.Invariants.test_pass_without_evidence_rejected) ... ok
+test_all_gates_pass (tests.test_unit.Overall.test_all_gates_pass) ... ok
+test_any_gate_fail (tests.test_unit.Overall.test_any_gate_fail) ... ok
+test_non_gate_fail_does_not_block (tests.test_unit.Overall.test_non_gate_fail_does_not_block) ... ok
+test_nothing_applicable_is_incomplete (tests.test_unit.Overall.test_nothing_applicable_is_incomplete) ... ok
+test_unavailable_gate_is_incomplete (tests.test_unit.Overall.test_unavailable_gate_is_incomplete) ... ok
+test_all_load_and_ids_unique (tests.test_unit.Profiles.test_all_load_and_ids_unique) ... ok
+test_extends (tests.test_unit.Profiles.test_extends) ... ok
+test_paths_and_secrets (tests.test_unit.Redaction.test_paths_and_secrets) ... ok
+test_frontmatter (tests.test_unit.Skill.test_frontmatter) ... ok
+test_inspect_is_read_only (tests.test_acceptance.AC1NewPythonProject.test_inspect_is_read_only) ... ok
+test_plan_then_apply_then_verify_pass (tests.test_acceptance.AC1NewPythonProject.test_plan_then_apply_then_verify_pass) ... ok
+test_existing_config_untouched (tests.test_acceptance.AC2ExistingPythonProject.test_existing_config_untouched) ... ok
+test_injected_lint_defect_fails_gate (tests.test_acceptance.AC2ExistingPythonProject.test_injected_lint_defect_fails_gate) ... ok
+test_injected_logic_defect_fails_tests (tests.test_acceptance.AC2ExistingPythonProject.test_injected_logic_defect_fails_tests) ... ok
+test_adopt_verify_and_catch_type_error (tests.test_acceptance.AC3TypeScriptProject.test_adopt_verify_and_catch_type_error) ... ok
+test_no_tests_collected_is_unknown (tests.test_acceptance.AC6NotRunIsNotPass.test_no_tests_collected_is_unknown) ... ok
+test_skip_tests (tests.test_acceptance.AC6NotRunIsNotPass.test_skip_tests) ... ok
+test_missing_tools (tests.test_acceptance.AC7ToolUnavailable.test_missing_tools) ... ok
+test_apply_refuses_twice (tests.test_acceptance.AC8Revert.test_apply_refuses_twice) ... ok
+test_revert_keeps_human_edits (tests.test_acceptance.AC8Revert.test_revert_keeps_human_edits) ... ok
+test_revert_restores_tree (tests.test_acceptance.AC8Revert.test_revert_restores_tree) ... ok
+test_docs (tests.test_acceptance.DocsProfile.test_docs) ... ok
+test_verify_only (tests.test_acceptance.VerifyWithoutAdoption.test_verify_only) ... ok
+
+----------------------------------------------------------------------
+Ran 26 tests in 7.073s
+
+OK
+unittest exit=0

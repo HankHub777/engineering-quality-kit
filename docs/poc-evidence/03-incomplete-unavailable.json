@@ -1,0 +1,175 @@
+{
+  "schema_version": "0.1",
+  "run_id": "20261109T143548Z-1bff13",
+  "generated_at": "2026-11-09T14:35:48Z",
+  "producer": {
+    "name": "eqk",
+    "version": "0.1.0"
+  },
+  "project": {
+    "id": "proj-6d14bc678c9d"
+  },
+  "git": {
+    "is_repo": true,
+    "commit": "26e9170992882813d58b022accf609e116de687c",
+    "dirty": false
+  },
+  "profile": {
+    "id": "python-data",
+    "version": "0.1.0"
+  },
+  "overall": {
+    "status": "incomplete",
+    "counts": {
+      "unknown": 4,
+      "exec_unavailable": 4,
+      "not_applicable": 2,
+      "exec_not_run": 2
+    }
+  },
+  "checks": [
+    {
+      "check_id": "py.lint",
+      "tool": {
+        "name": "ruff",
+        "version": null,
+        "source": null
+      },
+      "gate": true,
+      "execution_status": "unavailable",
+      "result_status": "unknown",
+      "started_at": null,
+      "duration_ms": null,
+      "exit_code": null,
+      "evidence_ref": null,
+      "summary": {
+        "errors": [
+          "tool 'ruff' not found in repo .venv/venv, node_modules/.bin or PATH; eqk does not install tools. Install: pip install ruff"
+        ],
+        "warnings": []
+      },
+      "limitations": [
+        "check could not run; result unknown"
+      ]
+    },
+    {
+      "check_id": "py.test",
+      "tool": {
+        "name": "pytest",
+        "version": null,
+        "source": null
+      },
+      "gate": true,
+      "execution_status": "unavailable",
+      "result_status": "unknown",
+      "started_at": null,
+      "duration_ms": null,
+      "exit_code": null,
+      "evidence_ref": null,
+      "summary": {
+        "errors": [
+          "tool 'pytest' not found in repo .venv/venv, node_modules/.bin or PATH; eqk does not install tools. Install: pip install pytest"
+        ],
+        "warnings": []
+      },
+      "limitations": [
+        "check could not run; result unknown"
+      ]
+    },
+    {
+      "check_id": "ts.typecheck",
+      "tool": {
+        "name": "tsc",
+        "version": null,
+        "source": null
+      },
+      "gate": true,
+      "execution_status": "not_run",
+      "result_status": "not_applicable",
+      "started_at": null,
+      "duration_ms": null,
+      "exit_code": null,
+      "evidence_ref": null,
+      "summary": {
+        "errors": [],
+        "warnings": []
+      },
+      "limitations": [
+        "no typescript files detected"
+      ]
+    },
+    {
+      "check_id": "js.test",
+      "tool": {
+        "name": "npm",
+        "version": null,
+        "source": null
+      },
+      "gate": true,
+      "execution_status": "not_run",
+      "result_status": "not_applicable",
+      "started_at": null,
+      "duration_ms": null,
+      "exit_code": null,
+      "evidence_ref": null,
+      "summary": {
+        "errors": [],
+        "warnings": []
+      },
+      "limitations": [
+        "no javascript files detected"
+      ]
+    },
+    {
+      "check_id": "py.format",
+      "tool": {
+        "name": "ruff",
+        "version": null,
+        "source": null
+      },
+      "gate": false,
+      "execution_status": "unavailable",
+      "result_status": "unknown",
+      "started_at": null,
+      "duration_ms": null,
+      "exit_code": null,
+      "evidence_ref": null,
+      "summary": {
+        "errors": [
+          "tool 'ruff' not found in repo .venv/venv, node_modules/.bin or PATH; eqk does not install tools. Install: pip install ruff"
+        ],
+        "warnings": []
+      },
+      "limitations": [
+        "check could not run; result unknown"
+      ]
+    },
+    {
+      "check_id": "py.types",
+      "tool": {
+        "name": "mypy",
+        "version": null,
+        "source": null
+      },
+      "gate": false,
+      "execution_status": "unavailable",
+      "result_status": "unknown",
+      "started_at": null,
+      "duration_ms": null,
+      "exit_code": null,
+      "evidence_ref": null,
+      "summary": {
+        "errors": [
+          "tool 'mypy' not found in repo .venv/venv, node_modules/.bin or PATH; eqk does not install tools. Install: pip install mypy"
+        ],
+        "warnings": []
+      },
+      "limitations": [
+        "check could not run; result unknown"
+      ]
+    }
+  ],
+  "limitations": [
+    "results cover only the checks listed; they are not a statement about overall software correctness"
+  ]
+}

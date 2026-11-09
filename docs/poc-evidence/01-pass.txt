@@ -1,0 +1,16 @@
+# Quality result: PASS
+profile python-data 0.1.0 · commit 26e9170992 · run 20261109T143547Z-481eca
+
+- PASS py.lint (gate)
+- PASS py.test (gate)
+- n/a  ts.typecheck (gate) [not_run]
+    · no typescript files detected
+- n/a  js.test (gate) [not_run]
+    · no javascript files detected
+- PASS py.format (info)
+- PASS py.types (info)
+
+Limitations:
+- results cover only the checks listed; they are not a statement about overall software correctness
+
+exit=0

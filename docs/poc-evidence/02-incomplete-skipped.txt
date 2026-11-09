@@ -1,0 +1,19 @@
+# Quality result: INCOMPLETE
+profile python-data 0.1.0 · commit 26e9170992 · run 20261109T143548Z-51ba8b
+
+- PASS py.lint (gate)
+- ???? py.test (gate) [not_run]
+    · not run: excluded by --skip/--only; this is NOT a pass
+- n/a  ts.typecheck (gate) [not_run]
+    · no typescript files detected
+- n/a  js.test (gate) [not_run]
+    · no javascript files detected
+- PASS py.format (info)
+- PASS py.types (info)
+
+INCOMPLETE: at least one gate check has no passing evidence. This is not a pass.
+
+Limitations:
+- results cover only the checks listed; they are not a statement about overall software correctness
+
+exit=2
