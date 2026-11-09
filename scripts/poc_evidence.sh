@@ -41,6 +41,7 @@ eqk revert > "$OUT/05-revert.txt"; echo "exit=$?" >> "$OUT/05-revert.txt"
 git -C "$TMP/repo" status --porcelain --ignored >> "$OUT/05-revert.txt"; echo "(empty status above = tree restored)" >> "$OUT/05-revert.txt"
 
 # Dogfood: the kit verifies itself (verify-only, nothing written into the kit).
-(cd "$KIT" && python3 -m eqk verify --profile python-data --out "$TMP/self" .) > "$OUT/06-self-check.txt" 2>/dev/null
+# PYTHONPATH unset so the self-check cannot pass only because of this script's env.
+(cd "$KIT" && env -u PYTHONPATH python3 -m eqk verify --profile python-data --out "$TMP/self" .) > "$OUT/06-self-check.txt" 2>/dev/null
 echo "exit=$?" >> "$OUT/06-self-check.txt"
 echo "evidence written to $OUT"

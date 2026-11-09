@@ -39,6 +39,9 @@ Reproduce: put the tools on `PATH`, then `scripts/poc_evidence.sh`.
    MD060 table pipe spacing) and one real issue (code fence without a language). The
    cosmetic rules are now off in the `docs` template; the real one was fixed. The kit's
    docs pass `--profile docs`.
+6. **The kit's self-check passed only because the evidence script exported `PYTHONPATH`.**
+   A clean checkout's `pytest` could not import `eqk`. Fix: `pythonpath = ["."]` in
+   `pyproject.toml`; the script now unsets `PYTHONPATH` for the self-check.
 
 ## Not verified (honest gaps)
 
