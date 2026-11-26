@@ -10,7 +10,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from eqk import adoption, profiles
+from eqk import adoption, cli, profiles
 from eqk.util import redact
 from eqk.verify import overall, validate_invariants
 
@@ -135,6 +135,16 @@ class ApplyPartialFailure(TempRepo):
         self.assertTrue(first.exists())
         adoption.revert(self.root)
         self.assertFalse(first.exists())
+
+
+class CliInternalError(TempRepo):
+    def test_internal_error_exits_5(self) -> None:
+        (self.root / "README.md").write_text("# x\n")
+        with mock.patch("eqk.verify.validate_invariants", side_effect=AssertionError("boom")), mock.patch(
+            "sys.stderr"
+        ):
+            code = cli.main(["verify", "--profile", "minimal", "--out", str(self.base / "out"), str(self.root)])
+        self.assertEqual(code, 5)
 
 
 class Profiles(unittest.TestCase):
