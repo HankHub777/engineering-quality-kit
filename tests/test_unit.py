@@ -152,9 +152,7 @@ class ApplyPartialFailure(TempRepo):
 class CliInternalError(TempRepo):
     def test_internal_error_exits_5(self) -> None:
         (self.root / "README.md").write_text("# x\n")
-        with mock.patch("eqk.verify.validate_invariants", side_effect=AssertionError("boom")), mock.patch(
-            "sys.stderr"
-        ):
+        with mock.patch("eqk.verify.validate_invariants", side_effect=AssertionError("boom")), mock.patch("sys.stderr"):
             code = cli.main(["verify", "--profile", "minimal", "--out", str(self.base / "out"), str(self.root)])
         self.assertEqual(code, 5)
 

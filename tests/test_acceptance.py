@@ -262,7 +262,9 @@ class ToolErrorIsNotAVerdict(AcceptanceBase):
         rep = latest_report(self.root)
         self.assertValidReport(rep)
         lint = check(rep, "py.lint")
-        self.assertEqual((lint["execution_status"], lint["exit_code"], lint["result_status"]), ("executed", 2, "unknown"))
+        self.assertEqual(
+            (lint["execution_status"], lint["exit_code"], lint["result_status"]), ("executed", 2, "unknown")
+        )
         self.assertTrue(any("no verdict" in x for x in lint["limitations"]), lint["limitations"])
         self.assertEqual(rep["overall"]["status"], "incomplete")
 
