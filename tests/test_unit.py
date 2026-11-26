@@ -128,6 +128,19 @@ class RevertSafety(TempRepo):
         self.assertFalse(res["complete"])
 
 
+class RevertPreexistingDirs(TempRepo):
+    def test_preexisting_quality_subdirs_survive_revert(self) -> None:
+        keep = self.root / ".quality/reports/keep.txt"
+        keep.parent.mkdir(parents=True)
+        keep.write_text("mine\n")
+        adoption.apply(self.root, "minimal")
+        (self.root / ".quality/evidence").mkdir()  # created after apply: eqk's, removed
+        res = adoption.revert(self.root)
+        self.assertTrue(res["complete"])
+        self.assertTrue(keep.exists())
+        self.assertFalse((self.root / ".quality/evidence").exists())
+
+
 class ApplyPartialFailure(TempRepo):
     def test_manifest_written_when_apply_fails_midway(self) -> None:
         real = adoption.sha256_file
