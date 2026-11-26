@@ -183,8 +183,14 @@ def revert(root: Path, force: bool = False) -> dict:
         raise RuntimeError("nothing to revert: .quality/applied.json not found")
     manifest = json.loads(mpath.read_text(encoding="utf-8"))
     removed, kept = [], []
+    root_resolved = root.resolve()
     for item in manifest["created"]:
         p = root / item["path"]
+        # The manifest is a committed file and may come from an untrusted clone: never touch
+        # anything that is not inside this repository, not even with --force.
+        if Path(item["path"]).is_absolute() or not p.resolve().is_relative_to(root_resolved):
+            kept.append({"path": item["path"], "reason": "path outside repository; refusing"})
+            continue
         if not p.exists():
             continue
         if sha256_file(p) != item["sha256"] and not force:

@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
+import tempfile
 import unittest
 from pathlib import Path
 
-from eqk import profiles
+from eqk import adoption, profiles
 from eqk.util import redact
 from eqk.verify import overall, validate_invariants
 
@@ -69,6 +71,38 @@ class Redaction(unittest.TestCase):
         self.assertNotIn("zzz", out)
         self.assertNotIn("ghp_", out)
         self.assertIn("<repo>/a.py", out)
+
+
+class TempRepo(unittest.TestCase):
+    def setUp(self) -> None:
+        tmp = tempfile.TemporaryDirectory(prefix="eqk-unit-")
+        self.addCleanup(tmp.cleanup)
+        self.base = Path(tmp.name).resolve()
+        self.root = self.base / "repo"
+        self.root.mkdir()
+
+
+class RevertSafety(TempRepo):
+    def test_force_never_deletes_outside_repo(self) -> None:
+        outside = self.base / "outside.txt"
+        outside.write_text("victim\n")
+        absolute = self.base / "absolute.txt"
+        absolute.write_text("victim\n")
+        digest = hashlib.sha256(b"victim\n").hexdigest()
+        (self.root / ".quality").mkdir()
+        manifest = {
+            "created": [
+                {"path": "../outside.txt", "sha256": digest},
+                {"path": str(absolute), "sha256": digest},
+            ]
+        }
+        (self.root / adoption.MANIFEST).write_text(json.dumps(manifest))
+        res = adoption.revert(self.root, force=True)
+        self.assertTrue(outside.exists())
+        self.assertTrue(absolute.exists())
+        self.assertEqual(res["removed"], [])
+        self.assertEqual({k["path"] for k in res["kept"]}, {"../outside.txt", str(absolute)})
+        self.assertFalse(res["complete"])
 
 
 class Profiles(unittest.TestCase):
