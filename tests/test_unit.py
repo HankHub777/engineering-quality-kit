@@ -41,7 +41,10 @@ class Overall(unittest.TestCase):
         self.assertEqual(overall([c("not_applicable", execution="not_run")])["status"], "incomplete")
 
     def test_non_gate_fail_does_not_block(self) -> None:
-        self.assertEqual(overall([c("pass"), c("warning", gate=False)])["status"], "pass")
+        self.assertEqual(overall([c("pass"), c("fail", gate=False)])["status"], "pass")
+
+    def test_gate_not_run_is_incomplete(self) -> None:
+        self.assertEqual(overall([c("pass"), c("unknown", execution="not_run")])["status"], "incomplete")
 
 
 class Invariants(unittest.TestCase):
@@ -57,6 +60,14 @@ class Invariants(unittest.TestCase):
         bad["execution_status"] = "not_run"
         with self.assertRaises(AssertionError):
             validate_invariants(self.rep(bad))
+
+    def test_not_run_with_verdict_rejected(self) -> None:
+        with self.assertRaises(AssertionError):
+            validate_invariants(self.rep(c("fail", execution="not_run"), status="fail"))
+
+    def test_overall_pass_without_passing_gate_rejected(self) -> None:
+        with self.assertRaises(AssertionError):
+            validate_invariants(self.rep(c("not_applicable", execution="not_run"), status="pass"))
 
     def test_ok(self) -> None:
         validate_invariants(self.rep(c("pass")))
