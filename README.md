@@ -47,7 +47,9 @@ manifest `.quality/applied.json`.
 
 ## Safety contract for existing repos
 
-- `inspect` and `plan` write nothing. `apply` needs `--yes`.
+- `inspect` and `plan` write nothing. `apply` needs `--yes`. (The `modified_files: []`
+  field in `inspect --json` declares this contract; it is not measured at run time. The
+  acceptance tests verify it with a before/after snapshot of the repo.)
 - `apply` only **creates** files that don't exist (opened with exclusive-create). It
   never edits, reformats, or deletes existing files, CI, pre-commit, or merge policy.
 - `verify` keeps tool caches in `.quality/cache/` and writes nothing into an

@@ -163,7 +163,9 @@ def inspect_repo(root: Path) -> dict:
     info["tools"] = tool_availability(root)
     prof, why = suggest_profile(info)
     info["suggested_profile"] = {"id": prof, "reason": why}
-    info["modified_files"] = []  # inspect is read-only by contract; tests assert this.
+    # Contract declaration, not a measurement: inspect writes nothing. Verified by the
+    # snapshot test AC1NewPythonProject.test_inspect_is_read_only, not computed here.
+    info["modified_files"] = []
     return info
 
 

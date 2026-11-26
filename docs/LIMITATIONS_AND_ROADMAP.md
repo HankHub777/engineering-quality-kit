@@ -15,6 +15,12 @@
 - **No per-check config in `.quality/eqk.json` yet** (e.g. turn a gate into info).
 - **Single-directory scope**: no monorepo / workspace awareness.
 - **Redaction is best-effort** (path replacement + credential regexes).
+- **Detection scope is narrow**: `tsconfig.json`, ESLint config (`eslint.config.*`,
+  `.eslintrc*`) and `.markdownlint*` are detected at the repo top level only; an
+  `"eslintConfig"` key in `package.json` is not detected (so `ts.lint` stays
+  `not_applicable`).
+- **Python 3.9/3.10 TOML fallback** (no `tomllib`) only recognises `[tool.ruff]`-style
+  table headers; dotted keys such as `tool.ruff.line-length = 100` are missed.
 - Skill evals are written, not executed.
 
 ## Deliberately not built (per brief §10)
