@@ -8,6 +8,7 @@ from fnmatch import fnmatch
 from pathlib import Path
 
 from . import profiles as profiles_mod
+from . import util
 from .util import git_state, resolve_tool, walk_files
 
 try:  # Python 3.11+
@@ -111,6 +112,8 @@ def detect(root: Path) -> dict:
         "eqk": [".quality/eqk.json"] if (root / ".quality/eqk.json").is_file() else [],
     }
     warnings: list[str] = []
+    if len(files) >= util.MAX_FILES:
+        warnings.append(f"file scan stopped at {len(files)} files; language/config detection may be incomplete")
     if pyproject.get("__unparseable__"):
         warnings.append("pyproject.toml could not be parsed; config detection may be incomplete")
     if pkg.get("__unparseable__"):

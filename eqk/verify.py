@@ -229,6 +229,7 @@ def verify(
     out.mkdir(parents=True, exist_ok=True)
 
     info = detect(root)
+    limitations += info.get("warnings", [])
     gstate = git_state(root)
     if gstate["dirty"]:
         limitations.append("working tree is dirty: git.commit does not fully identify the verified content")

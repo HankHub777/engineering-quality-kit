@@ -13,6 +13,7 @@ from unittest import mock
 
 from eqk import adoption, cli, inspection, profiles
 from eqk.util import redact
+from eqk import verify as verify_mod
 from eqk.verify import overall, validate_invariants
 
 KIT = Path(__file__).resolve().parents[1]
@@ -192,6 +193,17 @@ class DetectWarnings(TempRepo):
 
     def test_no_warnings_key_is_empty_list(self) -> None:
         self.assertEqual(inspection.detect(self.root)["warnings"], [])
+
+
+class FileScanCap(TempRepo):
+    def test_truncated_scan_warns_and_reaches_report(self) -> None:
+        for i in range(5):
+            (self.root / f"n{i}.txt").write_text("x\n")
+        with mock.patch("eqk.util.MAX_FILES", 3):
+            info = inspection.detect(self.root)
+            self.assertTrue(any("file scan stopped at 3 files" in w for w in info["warnings"]), info["warnings"])
+            report, _ = verify_mod.verify(self.root, "minimal", out=self.base / "out")
+        self.assertTrue(any("file scan stopped" in x for x in report["limitations"]), report["limitations"])
 
 
 class Profiles(unittest.TestCase):
