@@ -72,6 +72,15 @@ class Redaction(unittest.TestCase):
         self.assertNotIn("ghp_", out)
         self.assertIn("<repo>/a.py", out)
 
+    def test_bearer_token_redacted(self) -> None:
+        out = redact("Authorization: Bearer abc123\nauthorization basic dXNlcjpw", Path("/r"))
+        self.assertNotIn("abc123", out)
+        self.assertNotIn("dXNlcjpw", out)
+
+    def test_redaction_stays_on_one_line(self) -> None:
+        out = redact("invalid token\nsrc/a.py:1:1 E999", Path("/r"))
+        self.assertIn("src/a.py:1:1", out)
+
 
 class TempRepo(unittest.TestCase):
     def setUp(self) -> None:
