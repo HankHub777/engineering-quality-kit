@@ -22,7 +22,7 @@ from .util import git_state, project_id, redact, resolve_tool
 SCHEMA_VERSION = "0.1"
 MAX_SUMMARY_LINES = 15
 LOCATION_RE = re.compile(r"[\w./-]+\.\w+(:\d+(:\d+)?:|\(\d+,\d+\))")  # a.py:1:2:  /  a.ts(1,2)
-ERROR_HINTS = ("error", "fail", "found", "✖", "×", "e:", "mismatch", "would reformat")
+ERROR_HINTS = ("error", "fail", "found", "✖", "×", "mismatch", "would reformat")
 
 
 def _now() -> str:

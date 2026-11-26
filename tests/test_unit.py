@@ -49,6 +49,12 @@ class Overall(unittest.TestCase):
         self.assertEqual(overall([c("pass"), c("unknown", execution="not_run")])["status"], "incomplete")
 
 
+class Summary(unittest.TestCase):
+    def test_note_and_file_lines_are_not_errors(self) -> None:
+        out = verify_mod._summarize("a.py:1:1: F401 unused\nnote: see docs\nfile: x\nFound 1 error.\n")
+        self.assertEqual(out, ["a.py:1:1: F401 unused", "Found 1 error."])
+
+
 class Invariants(unittest.TestCase):
     def rep(self, *checks: dict, status: str = "pass") -> dict:
         return {"checks": list(checks), "overall": {"status": status}}
