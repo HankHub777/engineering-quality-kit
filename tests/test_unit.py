@@ -8,6 +8,7 @@ import re
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from eqk import adoption, profiles
 from eqk.util import redact
@@ -112,6 +113,28 @@ class RevertSafety(TempRepo):
         self.assertEqual(res["removed"], [])
         self.assertEqual({k["path"] for k in res["kept"]}, {"../outside.txt", str(absolute)})
         self.assertFalse(res["complete"])
+
+
+class ApplyPartialFailure(TempRepo):
+    def test_manifest_written_when_apply_fails_midway(self) -> None:
+        real = adoption.sha256_file
+        calls = {"n": 0}
+
+        def flaky(path: Path) -> str:
+            calls["n"] += 1
+            if calls["n"] > 1:
+                raise OSError("disk full")
+            return real(path)
+
+        with mock.patch("eqk.adoption.sha256_file", side_effect=flaky):
+            with self.assertRaises(OSError):
+                adoption.apply(self.root, "minimal")
+        manifest = json.loads((self.root / adoption.MANIFEST).read_text())
+        self.assertEqual(len(manifest["created"]), 1)
+        first = self.root / manifest["created"][0]["path"]
+        self.assertTrue(first.exists())
+        adoption.revert(self.root)
+        self.assertFalse(first.exists())
 
 
 class Profiles(unittest.TestCase):

@@ -154,17 +154,7 @@ def apply(root: Path, profile_id: str) -> dict:
     plan = build_plan(root, profile_id)
     if (root / MANIFEST).exists():
         raise RuntimeError("already applied (.quality/applied.json exists); run `eqk revert` first")
-    created = []
-    for a in plan["actions"]:
-        if a["op"] != "create":
-            continue
-        target = root / a["path"]
-        if target.exists():  # appeared after planning: still never overwrite
-            continue
-        target.parent.mkdir(parents=True, exist_ok=True)
-        with open(target, "x", encoding="utf-8", newline="\n") as fh:  # 'x' = fail if it exists
-            fh.write(a["content"])
-        created.append({"path": a["path"], "sha256": sha256_file(target)})
+    created: list[dict] = []
     manifest = {
         "eqk_version": __version__,
         "profile": plan["profile"],
@@ -173,7 +163,21 @@ def apply(root: Path, profile_id: str) -> dict:
         "modified": [],
         "deleted": [],
     }
-    (root / MANIFEST).write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    try:
+        for a in plan["actions"]:
+            if a["op"] != "create":
+                continue
+            target = root / a["path"]
+            if target.exists():  # appeared after planning: still never overwrite
+                continue
+            target.parent.mkdir(parents=True, exist_ok=True)
+            with open(target, "x", encoding="utf-8", newline="\n") as fh:  # 'x' = fail if it exists
+                fh.write(a["content"])
+            created.append({"path": a["path"], "sha256": sha256_file(target)})
+    finally:
+        # Written even if creation fails midway, so every file already created stays revertible.
+        (root / MANIFEST).parent.mkdir(parents=True, exist_ok=True)
+        (root / MANIFEST).write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     return {"plan": plan, "manifest": manifest}
 
 
