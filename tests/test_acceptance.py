@@ -247,6 +247,25 @@ class AC6NotRunIsNotPass(AcceptanceBase):
         self.assertEqual((t["execution_status"], t["exit_code"], t["result_status"]), ("executed", 5, "unknown"))
 
 
+class ToolErrorIsNotAVerdict(AcceptanceBase):
+    """V-2: a tool that cannot give a verdict (bad config) is unknown, not a quality fail."""
+
+    example = "python-new"
+
+    def test_ruff_config_error_is_unknown(self) -> None:
+        need("ruff", "pytest")
+        (self.root / "ruff.toml").write_text('[lint]\nselect = ["NOPE999"]\n')
+        eqk(self.root, "apply", "--profile", "python-data", "--yes")
+        r = eqk(self.root, "verify")
+        self.assertEqual(r.returncode, 2, r.stdout)
+        rep = latest_report(self.root)
+        self.assertValidReport(rep)
+        lint = check(rep, "py.lint")
+        self.assertEqual((lint["execution_status"], lint["exit_code"], lint["result_status"]), ("executed", 2, "unknown"))
+        self.assertTrue(any("no verdict" in x for x in lint["limitations"]), lint["limitations"])
+        self.assertEqual(rep["overall"]["status"], "incomplete")
+
+
 class AC7ToolUnavailable(AcceptanceBase):
     """AC-7: when tools are missing (offline / locked-down), eqk says so and does not pass."""
 

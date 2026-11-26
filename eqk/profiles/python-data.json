@@ -5,10 +5,10 @@
   "description": "Python data / script projects: minimal + formatting and type checks as non-blocking signals.",
   "checks": [
     {"id": "py.format", "tool": "ruff", "args": ["format", "--check", "."], "applies_to": "python", "gate": false,
-     "install_hint": "pip install ruff",
+     "exit_codes": {"0": "pass", "1": "warning", "2": "unknown"}, "install_hint": "pip install ruff",
      "note": "Non-gate on purpose: eqk never reformats an existing codebase."},
     {"id": "py.types", "tool": "mypy", "args": ["."], "applies_to": "python", "gate": false,
-     "install_hint": "pip install mypy"}
+     "exit_codes": {"0": "pass", "1": "warning", "2": "unknown"}, "install_hint": "pip install mypy"}
   ],
   "scaffold": [
     {"path": "ruff.toml", "template": "ruff.toml", "applies_to": "python", "skip_if": "ruff_config"}
