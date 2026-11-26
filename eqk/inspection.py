@@ -110,8 +110,11 @@ def detect(root: Path) -> dict:
         ),
         "eqk": [".quality/eqk.json"] if (root / ".quality/eqk.json").is_file() else [],
     }
+    warnings: list[str] = []
     if pyproject.get("__unparseable__"):
-        configs["warnings"] = ["pyproject.toml could not be parsed; config detection may be incomplete"]
+        warnings.append("pyproject.toml could not be parsed; config detection may be incomplete")
+    if pkg.get("__unparseable__"):
+        warnings.append("package.json could not be parsed; npm test script detection may be incomplete")
 
     return {
         "languages": languages,
@@ -123,6 +126,7 @@ def detect(root: Path) -> dict:
         },
         "configs": configs,
         "git": git_state(root),
+        "warnings": warnings,
     }
 
 
@@ -177,6 +181,8 @@ def render(info: dict) -> str:
     for key, val in info["configs"].items():
         if val:
             lines.append(f"  - {key}: {', '.join(val[:5])}{' …' if len(val) > 5 else ''}")
+    if info.get("warnings"):
+        lines += ["", "Warnings:"] + [f"  ! {w}" for w in info["warnings"]]
     lines.append("")
     lines.append("Tools:")
     for name, t in info["tools"].items():

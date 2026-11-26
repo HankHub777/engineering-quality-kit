@@ -41,7 +41,7 @@ def build_plan(root: Path, profile_id: str) -> dict:
     prof = profiles_mod.load(profile_id)
     info = detect(root)
     actions: list[dict] = []
-    warnings: list[str] = []
+    warnings: list[str] = list(info.get("warnings", []))
 
     if (root / MANIFEST).exists():
         warnings.append(

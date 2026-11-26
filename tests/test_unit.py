@@ -177,6 +177,23 @@ class Detect(TempRepo):
         self.assertEqual(info["configs"]["mypy_config"], [])
 
 
+class DetectWarnings(TempRepo):
+    def test_broken_configs_warn_outside_configs(self) -> None:
+        (self.root / "pyproject.toml").write_text("[tool.ruff\n")
+        (self.root / "package.json").write_text("{not json")
+        info = inspection.detect(self.root)
+        self.assertNotIn("warnings", info["configs"])
+        joined = " ".join(info["warnings"])
+        self.assertIn("pyproject.toml", joined)
+        self.assertIn("package.json", joined)
+        self.assertIn("Warnings:", inspection.render(inspection.inspect_repo(self.root)))
+        plan = adoption.build_plan(self.root, "minimal")
+        self.assertTrue(any("package.json" in w for w in plan["warnings"]))
+
+    def test_no_warnings_key_is_empty_list(self) -> None:
+        self.assertEqual(inspection.detect(self.root)["warnings"], [])
+
+
 class Profiles(unittest.TestCase):
     def test_all_load_and_ids_unique(self) -> None:
         self.assertEqual(profiles.list_ids(), ["docs", "minimal", "python-data", "typescript-web"])
