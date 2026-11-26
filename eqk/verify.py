@@ -191,6 +191,13 @@ def verify(
             raise RuntimeError("no profile: pass --profile, or run `eqk apply` first")
         profile_id = json.loads(cfg_path.read_text(encoding="utf-8"))["profile"]
     prof = profiles_mod.load(profile_id)
+    known = {c["id"] for c in prof["checks"]}
+    unknown = ((skip or set()) | (only or set())) - known
+    if unknown:  # a typo in --skip would otherwise silently run the check
+        raise RuntimeError(
+            f"unknown check id(s): {', '.join(sorted(unknown))}; "
+            f"available in profile {prof['id']}: {', '.join(sorted(known))}"
+        )
 
     if out is None:
         if cfg_path.is_file():

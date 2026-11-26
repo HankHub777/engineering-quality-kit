@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 import re
 import tempfile
@@ -156,6 +157,18 @@ class CliInternalError(TempRepo):
         ):
             code = cli.main(["verify", "--profile", "minimal", "--out", str(self.base / "out"), str(self.root)])
         self.assertEqual(code, 5)
+
+
+class UnknownCheckIds(TempRepo):
+    def test_unknown_skip_or_only_is_usage_error(self) -> None:
+        out = self.base / "out"
+        for flag in ("--skip", "--only"):
+            with mock.patch("sys.stderr", new_callable=io.StringIO) as err:
+                code = cli.main(["verify", "--profile", "minimal", flag, "py.tests", "--out", str(out), str(self.root)])
+            self.assertEqual(code, 4, flag)
+            self.assertIn("py.tests", err.getvalue())
+            self.assertIn("py.test", err.getvalue().split("available", 1)[1])
+        self.assertFalse(out.exists(), "nothing should run or be written")
 
 
 class Detect(TempRepo):
