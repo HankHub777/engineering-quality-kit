@@ -6,6 +6,7 @@ import json
 import os
 import re
 import secrets
+import signal
 import subprocess
 import tempfile
 import time
@@ -34,6 +35,13 @@ def _summarize(output: str) -> list[str]:
     hits = [ln for ln in lines if any(h in ln.lower() for h in ERROR_HINTS)]
     chosen = (located + [h for h in hits if h not in located])[:MAX_SUMMARY_LINES] or lines[-MAX_SUMMARY_LINES:]
     return [ln[:300] for ln in chosen]
+
+
+def _text(data: bytes | str | None) -> str:
+    """TimeoutExpired carries bytes on POSIX even with text=True."""
+    if isinstance(data, bytes):
+        return data.decode("utf-8", "replace")
+    return data or ""
 
 
 def _tool_version(exe: str, root: Path) -> str | None:
@@ -98,20 +106,33 @@ def run_check(
 
     started = time.monotonic()
     r["started_at"] = _now()
+    posix = os.name == "posix"
     try:
-        p = subprocess.run(
+        # Own process group on POSIX so a timeout also kills what the tool started (npm -> node).
+        p = subprocess.Popen(
             [exe, *check["args"]],
             cwd=root,
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
-            timeout=timeout,
             encoding="utf-8",
             errors="replace",
             env=_tool_env(out_dir),
+            start_new_session=posix,
         )
-        code, output = p.returncode, (p.stdout or "") + (p.stderr or "")
-    except subprocess.TimeoutExpired as e:
-        code, output = None, f"timed out after {timeout}s\n" + str(e.output or "")
+        try:
+            stdout, stderr = p.communicate(timeout=timeout)
+            code, output = p.returncode, _text(stdout) + _text(stderr)
+        except subprocess.TimeoutExpired:
+            if posix:
+                try:
+                    os.killpg(p.pid, signal.SIGKILL)
+                except OSError:
+                    p.kill()
+            else:
+                p.kill()
+            stdout, stderr = p.communicate()
+            code, output = None, f"timed out after {timeout}s\n" + _text(stdout) + _text(stderr)
     except OSError as e:
         r["execution_status"] = "unavailable"
         r["started_at"] = None
