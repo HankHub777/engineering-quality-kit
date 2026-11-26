@@ -34,7 +34,8 @@ printf 'import os\n' | cat - "$TMP/repo/inventory/stock.py" > "$TMP/s" && mv "$T
 eqk verify > "$OUT/04-fail-injected-defect.txt"; echo "exit=$?" >> "$OUT/04-fail-injected-defect.txt"
 cp "$TMP/repo/.quality/reports/latest.json" "$OUT/04-fail-injected-defect.json"
 git -C "$TMP/repo" checkout -q -- inventory/stock.py
-git -C "$TMP/repo" reset -q --hard HEAD~1  # back to pre-adoption commit; files stay untracked-free
+git -C "$TMP/repo" reset -q --hard HEAD~1  # back to pre-adoption commit
+git -C "$TMP/repo" clean -qfdx           # drop ignored run outputs too, or apply would record them as pre-existing (A-2)
 eqk apply --profile python-data --yes > /dev/null
 eqk verify > /dev/null
 eqk revert > "$OUT/05-revert.txt"; echo "exit=$?" >> "$OUT/05-revert.txt"
