@@ -1,5 +1,5 @@
 # Quality result: FAIL
-profile python-data 0.1.0 · commit 9cac3bc279 (dirty) · run 20261109T145652Z-e7d385
+profile python-data 0.1.0 · commit 451ba4f07f (dirty) · run 20261126T031839Z-ee016c
 
 - FAIL py.lint (gate)
     ✗ inventory/stock.py:1:1: I001 [*] Import block is un-sorted or un-formatted
