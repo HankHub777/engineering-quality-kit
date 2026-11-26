@@ -41,7 +41,7 @@ def _ini_has(path: Path, section: str) -> bool:
     cp = configparser.ConfigParser()
     try:
         cp.read(path, encoding="utf-8")
-    except configparser.Error:
+    except (configparser.Error, UnicodeDecodeError):  # odd user config must not crash inspect
         return False
     return cp.has_section(section)
 

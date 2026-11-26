@@ -10,7 +10,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from eqk import adoption, cli, profiles
+from eqk import adoption, cli, inspection, profiles
 from eqk.util import redact
 from eqk.verify import overall, validate_invariants
 
@@ -145,6 +145,14 @@ class CliInternalError(TempRepo):
         ):
             code = cli.main(["verify", "--profile", "minimal", "--out", str(self.base / "out"), str(self.root)])
         self.assertEqual(code, 5)
+
+
+class Detect(TempRepo):
+    def test_non_utf8_ini_does_not_crash(self) -> None:
+        (self.root / "setup.cfg").write_bytes(b"[mypy]\n# \xa4\xa4\n")
+        (self.root / "tox.ini").write_bytes(b"[pytest]\n# \xa4\xa4\n")
+        info = inspection.detect(self.root)
+        self.assertEqual(info["configs"]["mypy_config"], [])
 
 
 class Profiles(unittest.TestCase):
