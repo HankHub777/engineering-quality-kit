@@ -22,6 +22,9 @@
 - **Python 3.9/3.10 TOML fallback** (no `tomllib`) only recognises `[tool.ruff]`-style
   table headers; dotted keys such as `tool.ruff.line-length = 100` are missed.
 - Skill evals are written, not executed.
+- **Windows timeout kill reaches only the direct child.** On POSIX a timed-out (or
+  interrupted) check's whole process group is killed; on Windows only the process eqk
+  started is killed, so processes it started (e.g. node under `npm test`) can keep running.
 
 ## Deliberately not built (per brief §10)
 
@@ -38,6 +41,7 @@ framework, auto merge/deploy, auto-install of tools.
 | Docs profile: Vale + glossary, STE-inspired rules | A team has delivery / operations docs that caused real errors |
 | Property-based (Hypothesis / fast-check) and contract / data-quality checks | A specific repo has a bug class these would have caught |
 | Biome for TS repos without ESLint | Repeated requests to add TS lint to new repos |
+| Windows process-tree kill on timeout (`CREATE_NEW_PROCESS_GROUP` + `taskkill /T /F`) | A Windows CI runner exists |
 | A/B evaluation of rules | ≥ 3 repos with history of eqk reports to compare |
 
 ## P2 candidates — start conditions
