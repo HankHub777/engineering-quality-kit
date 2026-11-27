@@ -349,7 +349,13 @@ class Interrupt(AcceptanceBase):
             env=env,
             start_new_session=True,
         )
-        self.addCleanup(lambda: p.poll() is None and os.killpg(p.pid, signal.SIGKILL))
+
+        def stop_eqk() -> None:
+            if p.poll() is None:
+                os.killpg(p.pid, signal.SIGKILL)
+                p.wait()
+
+        self.addCleanup(stop_eqk)
         pidfile = self.root / "child.pid"
         end = time.monotonic() + 20
         while not pidfile.exists() and time.monotonic() < end:
