@@ -2,6 +2,8 @@
 
 - Core logic: `eqk/` (stdlib only — do not add runtime dependencies).
 - Profiles are data in `eqk/profiles/*.json`; prefer changing data over code.
+- Any profile change that can change a verdict bumps the version of that profile and of
+  every profile that extends it (`tests/test_unit.py` `Profiles.PINNED` enforces this).
 - Never weaken the invariant "no evidence, no pass": it is enforced in
   `eqk/verify.py:validate_invariants` and in `schema/quality-result.v0.1.schema.json`.
 - `apply` must stay create-only; existing user files are never edited.

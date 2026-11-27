@@ -1,5 +1,5 @@
 # Quality result: INCOMPLETE
-profile python-data 0.1.0 · commit 451ba4f07f · run 20261126T031839Z-097fbd
+profile python-data 0.1.1 · commit f80befe40c · run 20261127T090213Z-4a2bf2
 
 - ???? py.lint (gate) [unavailable]
     ✗ tool 'ruff' not found in repo .venv/venv, node_modules/.bin or PATH; eqk does not install tools. Install: pip install ruff

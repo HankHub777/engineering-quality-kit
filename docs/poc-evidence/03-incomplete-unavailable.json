@@ -1,22 +1,22 @@
 {
   "schema_version": "0.1",
-  "run_id": "20261126T031839Z-097fbd",
-  "generated_at": "2026-11-26T03:18:39Z",
+  "run_id": "20261127T090213Z-4a2bf2",
+  "generated_at": "2026-11-27T09:02:13Z",
   "producer": {
     "name": "eqk",
     "version": "0.1.0"
   },
   "project": {
-    "id": "proj-78885c306123"
+    "id": "proj-d96a7f9dd458"
   },
   "git": {
     "is_repo": true,
-    "commit": "451ba4f07f7b1557632bd0e124d48c6201c1dc8d",
+    "commit": "f80befe40c4fb196d45b9f5914c7cadeaba49774",
     "dirty": false
   },
   "profile": {
     "id": "python-data",
-    "version": "0.1.0"
+    "version": "0.1.1"
   },
   "overall": {
     "status": "incomplete",

@@ -15,7 +15,7 @@ from pathlib import Path
 
 from . import __version__
 from . import profiles as profiles_mod
-from .adoption import CONFIG, QUALITY_DIR, check_applicability
+from .adoption import CONFIG, QUALITY_DIR, check_applicability, quality_dir_safe
 from .inspection import detect
 from .util import git_state, project_id, redact, resolve_tool
 
@@ -120,10 +120,8 @@ def run_check(
             env=_tool_env(out_dir),
             start_new_session=posix,
         )
-        try:
-            stdout, stderr = p.communicate(timeout=timeout)
-            code, output = p.returncode, _text(stdout) + _text(stderr)
-        except subprocess.TimeoutExpired:
+
+        def kill_group() -> None:
             if posix:
                 try:
                     os.killpg(p.pid, signal.SIGKILL)
@@ -131,8 +129,33 @@ def run_check(
                     p.kill()
             else:
                 p.kill()
-            stdout, stderr = p.communicate()
+
+        try:
+            stdout, stderr = p.communicate(timeout=timeout)
+            code, output = p.returncode, _text(stdout) + _text(stderr)
+        except subprocess.TimeoutExpired:
+            kill_group()
+            try:
+                stdout, stderr = p.communicate(timeout=5)
+            except subprocess.TimeoutExpired as e:
+                # A descendant that left the group (setsid) still holds the pipe: stop reading.
+                stdout, stderr = _text(e.output), _text(e.stderr)
+                for pipe in (p.stdout, p.stderr):
+                    if pipe is not None:
+                        pipe.close()
+                r["limitations"].append(
+                    "output after the timeout could not be fully collected; a descendant process may still be running"
+                )
             code, output = None, f"timed out after {timeout}s\n" + _text(stdout) + _text(stderr)
+        except BaseException:
+            # Ctrl+C reaches only eqk's foreground group, not the tool's own session: stop the
+            # tool too, then let the interrupt stop eqk (no report is written).
+            kill_group()
+            try:
+                p.communicate(timeout=5)
+            except subprocess.TimeoutExpired:
+                pass
+            raise
     except OSError as e:
         r["execution_status"] = "unavailable"
         r["started_at"] = None
@@ -152,6 +175,11 @@ def run_check(
     if code is None:
         r["result_status"] = "unknown"
         r["limitations"].append(f"timed out after {timeout}s")
+        return r
+    if code < 0:  # POSIX: killed by a signal (e.g. -9 from the OOM killer): no verdict from any tool
+        r["result_status"] = "unknown"
+        r["limitations"].append(f"terminated by signal {-code}; the tool produced no verdict")
+        r["summary"]["warnings"] = _summarize(output)
         return r
     mapped = check.get("exit_codes", {"0": "pass"}).get(str(code))
     if mapped is None:
@@ -210,7 +238,10 @@ def verify(
     if profile_id is None:
         if not cfg_path.is_file():
             raise RuntimeError("no profile: pass --profile, or run `eqk apply` first")
-        profile_id = json.loads(cfg_path.read_text(encoding="utf-8"))["profile"]
+        try:
+            profile_id = json.loads(cfg_path.read_text(encoding="utf-8"))["profile"]
+        except (json.JSONDecodeError, KeyError, TypeError) as e:
+            raise RuntimeError(f"{CONFIG} is invalid: {e!r}; re-run eqk apply or pass --profile") from None
     prof = profiles_mod.load(profile_id)
     known = {c["id"] for c in prof["checks"]}
     unknown = ((skip or set()) | (only or set())) - known
@@ -222,6 +253,9 @@ def verify(
 
     if out is None:
         if cfg_path.is_file():
+            ok, why = quality_dir_safe(root)  # an explicit --out is the user's choice, not checked
+            if not ok:
+                raise RuntimeError(why)
             out = root / QUALITY_DIR
         else:  # verify-only on an un-adopted repo: write nothing inside it
             out = Path(tempfile.mkdtemp(prefix="eqk-"))

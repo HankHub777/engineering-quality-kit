@@ -1,6 +1,6 @@
 {
   "id": "typescript-web",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "extends": "minimal",
   "description": "TypeScript web projects: minimal + ESLint when the project already configures it.",
   "checks": [

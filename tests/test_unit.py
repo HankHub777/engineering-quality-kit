@@ -5,8 +5,13 @@ from __future__ import annotations
 import hashlib
 import io
 import json
+import os
 import re
+import signal
+import subprocess
+import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -149,16 +154,17 @@ class RevertPreexistingDirs(TempRepo):
 
 class ApplyPartialFailure(TempRepo):
     def test_manifest_written_when_apply_fails_midway(self) -> None:
-        real = adoption.sha256_file
-        calls = {"n": 0}
+        """A-1: the second file's exclusive-create fails; the first file stays revertible."""
+        calls = {"x": 0}
 
-        def flaky(path: Path) -> str:
-            calls["n"] += 1
-            if calls["n"] > 1:
-                raise OSError("disk full")
-            return real(path)
+        def flaky_open(file, mode="r", *args, **kwargs):  # type: ignore[no-untyped-def]
+            if "x" in mode:
+                calls["x"] += 1
+                if calls["x"] == 2:
+                    raise OSError("disk full")
+            return open(file, mode, *args, **kwargs)
 
-        with mock.patch("eqk.adoption.sha256_file", side_effect=flaky):
+        with mock.patch("eqk.adoption.open", side_effect=flaky_open, create=True):
             with self.assertRaises(OSError):
                 adoption.apply(self.root, "minimal")
         manifest = json.loads((self.root / adoption.MANIFEST).read_text())
@@ -168,6 +174,50 @@ class ApplyPartialFailure(TempRepo):
         adoption.revert(self.root)
         self.assertFalse(first.exists())
 
+    def test_file_failing_after_create_is_recorded_and_kept(self) -> None:
+        """N-3: open('x') succeeds but the write fails: the file is in the manifest, revert keeps it."""
+
+        class FailingWrite:
+            def __init__(self, fh):  # type: ignore[no-untyped-def]
+                self.fh = fh
+
+            def __enter__(self):  # type: ignore[no-untyped-def]
+                return self
+
+            def __exit__(self, *exc):  # type: ignore[no-untyped-def]
+                self.fh.close()
+                return False
+
+            def write(self, _data: str) -> int:
+                raise OSError("disk full")
+
+        def failing_open(file, mode="r", *args, **kwargs):  # type: ignore[no-untyped-def]
+            fh = open(file, mode, *args, **kwargs)
+            return FailingWrite(fh) if "x" in mode else fh
+
+        with mock.patch("eqk.adoption.open", side_effect=failing_open, create=True):
+            with self.assertRaises(OSError):
+                adoption.apply(self.root, "minimal")
+        manifest = json.loads((self.root / adoption.MANIFEST).read_text())
+        self.assertEqual(len(manifest["created"]), 1)
+        rel = manifest["created"][0]["path"]
+        self.assertTrue((self.root / rel).exists())
+        res = adoption.revert(self.root)
+        self.assertFalse(res["complete"])
+        self.assertEqual([k["path"] for k in res["kept"]], [rel])
+
+    def test_recorded_hash_matches_written_bytes_for_every_template(self) -> None:
+        (self.root / "a.py").write_text("x = 1\n")
+        (self.root / "README.md").write_text("# x\n")
+        seen = set()
+        for pid in profiles.list_ids():
+            res = adoption.apply(self.root, pid)
+            for item in res["manifest"]["created"]:
+                seen.add(item["path"])
+                self.assertEqual(item["sha256"], adoption.sha256_file(self.root / item["path"]), (pid, item))
+            self.assertTrue(adoption.revert(self.root)["complete"])
+        self.assertTrue({".quality/eqk.json", ".quality/.gitignore", "ruff.toml", ".markdownlint.jsonc"} <= seen, seen)
+
 
 class CliInternalError(TempRepo):
     def test_internal_error_exits_5(self) -> None:
@@ -175,6 +225,68 @@ class CliInternalError(TempRepo):
         with mock.patch("eqk.verify.validate_invariants", side_effect=AssertionError("boom")), mock.patch("sys.stderr"):
             code = cli.main(["verify", "--profile", "minimal", "--out", str(self.base / "out"), str(self.root)])
         self.assertEqual(code, 5)
+
+
+class StateVsInternalErrors(TempRepo):
+    """N-6: bad user state -> exit 4; an eqk bug (e.g. KeyError) -> exit 5."""
+
+    def run_cli(self, *args: str) -> int:
+        with mock.patch("sys.stderr", new_callable=io.StringIO) as err:
+            code = cli.main([*args, str(self.root)])
+        self.stderr = err.getvalue()
+        return code
+
+    def write_cfg(self, text: str) -> None:
+        (self.root / ".quality").mkdir(exist_ok=True)
+        (self.root / adoption.CONFIG).write_text(text)
+
+    def test_profile_bug_keyerror_exits_5(self) -> None:
+        broken = {"id": "minimal", "version": "0", "checks": [{"id": "x.noargs", "tool": "python3", "gate": True}]}
+        with mock.patch("eqk.profiles.load", return_value=broken):
+            code = self.run_cli("verify", "--profile", "minimal", "--out", str(self.base / "out"))
+        self.assertEqual(code, 5, self.stderr)
+
+    def test_config_unknown_profile_exits_4(self) -> None:
+        self.write_cfg('{"profile": "nope"}')
+        self.assertEqual(self.run_cli("verify"), 4, self.stderr)
+        self.assertIn("unknown profile", self.stderr)
+
+    def test_config_invalid_json_exits_4(self) -> None:
+        self.write_cfg("{not json")
+        self.assertEqual(self.run_cli("verify"), 4, self.stderr)
+        self.assertIn("eqk.json is invalid", self.stderr)
+
+    def test_config_without_profile_key_exits_4(self) -> None:
+        self.write_cfg("{}")
+        self.assertEqual(self.run_cli("verify"), 4, self.stderr)
+        self.assertIn("eqk.json is invalid", self.stderr)
+
+    def test_invalid_manifest_exits_4(self) -> None:
+        for text in ("{not json", "{}"):
+            (self.root / ".quality").mkdir(exist_ok=True)
+            (self.root / adoption.MANIFEST).write_text(text)
+            self.assertEqual(self.run_cli("revert"), 4, self.stderr)
+            self.assertIn("applied.json is invalid", self.stderr)
+
+
+class ArgparseExitCodes(unittest.TestCase):
+    """N-1: bad command-line arguments exit 4, never 2 ("incomplete")."""
+
+    def exit_code(self, *argv: str) -> object:
+        with mock.patch("sys.stdout", new_callable=io.StringIO), mock.patch("sys.stderr", new_callable=io.StringIO):
+            with self.assertRaises(SystemExit) as cm:
+                cli.main(list(argv))
+        return cm.exception.code
+
+    def test_usage_errors_exit_4(self) -> None:
+        self.assertEqual(self.exit_code("verify", "--profile", "nope", "."), 4)
+        self.assertEqual(self.exit_code("verify", "--no-such-flag", "."), 4)
+        self.assertEqual(self.exit_code(), 4)
+
+    def test_help_and_version_exit_0(self) -> None:
+        self.assertIn(self.exit_code("--help"), (0, None))
+        self.assertIn(self.exit_code("--version"), (0, None))
+        self.assertIn(self.exit_code("verify", "--help"), (0, None))
 
 
 class UnknownCheckIds(TempRepo):
@@ -225,6 +337,144 @@ class FileScanCap(TempRepo):
         self.assertTrue(any("file scan stopped" in x for x in report["limitations"]), report["limitations"])
 
 
+def symlink_or_skip(tc: unittest.TestCase, target: Path, link: Path) -> None:
+    try:
+        os.symlink(target, link)
+    except (OSError, NotImplementedError) as e:
+        tc.skipTest(f"symlinks unavailable: {e}")
+
+
+def tree(path: Path) -> dict[str, bytes]:
+    return {p.relative_to(path).as_posix(): p.read_bytes() if p.is_file() else b"<dir>" for p in path.rglob("*")}
+
+
+class QualityDirSymlinks(TempRepo):
+    """N-2: eqk never writes or deletes through a symlink in .quality."""
+
+    def victim(self) -> Path:
+        v = self.base / "victim"
+        (v / "evidence").mkdir(parents=True)
+        (v / "evidence/data.txt").write_text("precious\n")
+        (v / "applied.json").write_text('{"created": []}')
+        return v
+
+    def run_cli(self, *args: str) -> int:
+        with mock.patch("sys.stderr", new_callable=io.StringIO) as err:
+            code = cli.main([*args, str(self.root)])
+        self.stderr = err.getvalue()
+        return code
+
+    def test_revert_refuses_symlinked_quality_dir(self) -> None:
+        v = self.victim()
+        symlink_or_skip(self, Path("../victim"), self.root / ".quality")
+        before = tree(v)
+        self.assertEqual(self.run_cli("revert"), 4, self.stderr)
+        self.assertEqual(tree(v), before)
+
+    def test_apply_refuses_symlinked_quality_dir(self) -> None:
+        v = self.base / "victim"
+        v.mkdir()
+        symlink_or_skip(self, Path("../victim"), self.root / ".quality")
+        self.assertEqual(self.run_cli("apply", "--profile", "minimal", "--yes"), 4, self.stderr)
+        self.assertEqual(list(v.iterdir()), [])
+
+    def test_verify_refuses_symlinked_report(self) -> None:
+        adoption.apply(self.root, "minimal")
+        target = self.base / "somefile"
+        target.write_text("mine\n")
+        (self.root / ".quality/reports").mkdir()
+        symlink_or_skip(self, target, self.root / ".quality/reports/latest.json")
+        self.assertEqual(self.run_cli("verify"), 4, self.stderr)
+        self.assertEqual(target.read_text(), "mine\n")
+
+    def test_normal_adopted_repo_is_safe(self) -> None:
+        self.assertTrue(adoption.quality_dir_safe(self.root)[0])  # no .quality yet
+        adoption.apply(self.root, "minimal")
+        ok, why = adoption.quality_dir_safe(self.root)
+        self.assertTrue(ok, why)
+
+
+RUN_CHECK_DRIVER = """
+import json, sys
+from pathlib import Path
+from eqk.verify import run_check
+args = json.loads(sys.argv[1])
+check = {"id": args["id"], "tool": "python3", "args": ["-c", args["script"], *args.get("argv", [])], "gate": True}
+root, out = Path(args["root"]), Path(args["out"])
+r = run_check(check, root, {"languages": [], "configs": {}}, out, "run", set(), None, args["timeout"])
+print(json.dumps(r))
+"""
+
+
+class RunCheckProcesses(TempRepo):
+    """N-8 / N-9: run_check against misbehaving tools, driven in a subprocess with a hard limit."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        if os.name != "posix":
+            self.skipTest("needs POSIX fork/setsid/signals")
+
+    def drive(self, script: str, timeout: int, hard_limit: float, argv: tuple[str, ...] = ()) -> tuple[dict, float]:
+        payload = {
+            "id": "x.proc",
+            "script": script,
+            "argv": list(argv),
+            "root": str(self.root),
+            "out": str(self.base / "out"),
+            "timeout": timeout,
+        }
+        env = dict(os.environ, PYTHONPATH=str(KIT), PYTHONDONTWRITEBYTECODE="1")
+        started = time.monotonic()
+        try:
+            p = subprocess.run(
+                [sys.executable, "-c", RUN_CHECK_DRIVER, json.dumps(payload)],
+                capture_output=True,
+                text=True,
+                env=env,
+                timeout=hard_limit,
+            )
+        except subprocess.TimeoutExpired:
+            self.fail(f"run_check did not return within {hard_limit}s (timeout={timeout}s): it hangs")
+        self.assertEqual(p.returncode, 0, p.stderr)
+        return json.loads(p.stdout), time.monotonic() - started
+
+    def test_setsid_descendant_holding_pipe_does_not_hang(self) -> None:
+        pidfile = self.base / "orphan.pid"
+
+        def cleanup() -> None:
+            if pidfile.exists():
+                try:
+                    os.kill(int(pidfile.read_text()), signal.SIGKILL)
+                except (ProcessLookupError, ValueError):
+                    pass
+
+        self.addCleanup(cleanup)
+        script = (
+            "import os, sys, time\n"
+            "if os.fork() == 0:\n"
+            "    os.setsid()\n"
+            "    open(sys.argv[1], 'w').write(str(os.getpid()))\n"
+            "    print('descendant started', flush=True)\n"
+            "    time.sleep(60)\n"
+            "    os._exit(0)\n"
+            "time.sleep(60)\n"
+        )
+        r, elapsed = self.drive(script, timeout=2, hard_limit=20, argv=(str(pidfile),))
+        self.assertEqual((r["execution_status"], r["result_status"]), ("executed", "unknown"))
+        self.assertIn("timed out after 2s", r["limitations"])
+        self.assertTrue(any("could not be fully collected" in x for x in r["limitations"]), r["limitations"])
+        self.assertTrue((self.base / "out" / r["evidence_ref"]).is_file())
+        self.assertLess(elapsed, 2 + 5 + 4)
+
+    def test_signal_killed_tool_is_unknown(self) -> None:
+        script = "import os, signal\nprint('about to die', flush=True)\nos.kill(os.getpid(), signal.SIGKILL)\n"
+        r, _ = self.drive(script, timeout=30, hard_limit=30)
+        self.assertEqual(r["exit_code"], -9)
+        self.assertEqual((r["execution_status"], r["result_status"]), ("executed", "unknown"))
+        self.assertIn("terminated by signal 9; the tool produced no verdict", r["limitations"])
+        self.assertTrue((self.base / "out" / r["evidence_ref"]).is_file())
+
+
 class Profiles(unittest.TestCase):
     def test_all_load_and_ids_unique(self) -> None:
         self.assertEqual(profiles.list_ids(), ["docs", "minimal", "python-data", "typescript-web"])
@@ -234,6 +484,28 @@ class Profiles(unittest.TestCase):
             self.assertEqual(len(ids), len(set(ids)), pid)
             for sc in p.get("scaffold", []):
                 self.assertTrue(profiles.template(sc["template"]))
+
+    # N-4: (version, sha256 of the verdict-relevant fields of the RESOLVED checks).
+    VERDICT_FIELDS = ("id", "tool", "args", "applies_to", "requires", "gate", "exit_codes")
+    PINNED = {
+        "docs": ("0.1.0", "33a990f7befe3233e3280db751e4eafadfb03134b9ada4e25405a243df6a02f4"),
+        "minimal": ("0.1.1", "19355170c9675ed7377dc4cbf35b750b68d61382d4e36ec6d05be5137578c0b6"),
+        "python-data": ("0.1.1", "b75bc97805b8dd581d14cf569c03d632c1d7bac02b74b732b70e80f52fc05e77"),
+        "typescript-web": ("0.1.1", "136c82aff8cd1b89ad42a4837989c3c7e411c7e2f5eac4a79a317d772df2ade5"),
+    }
+
+    def test_verdict_changes_bump_version(self) -> None:
+        self.assertEqual(set(self.PINNED), set(profiles.list_ids()), "pin every profile")
+        for pid, (version, digest) in self.PINNED.items():
+            p = profiles.load(pid)
+            checks = [{k: ch[k] for k in self.VERDICT_FIELDS if k in ch} for ch in p["checks"]]
+            actual = hashlib.sha256(json.dumps(checks, sort_keys=True).encode()).hexdigest()
+            self.assertEqual(
+                (p["version"], actual),
+                (version, digest),
+                f"profile {pid!r}: its verdict-relevant checks or version changed. If verdicts can change, "
+                f"bump the version of {pid!r} and of every profile that extends it, then update PINNED.",
+            )
 
     def test_extends(self) -> None:
         ids = {ch["id"] for ch in profiles.load("python-data")["checks"]}

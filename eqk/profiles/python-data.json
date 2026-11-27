@@ -1,6 +1,6 @@
 {
   "id": "python-data",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "extends": "minimal",
   "description": "Python data / script projects: minimal + formatting and type checks as non-blocking signals.",
   "checks": [

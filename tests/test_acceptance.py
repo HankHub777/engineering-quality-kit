@@ -13,6 +13,7 @@ import hashlib
 import json
 import os
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -304,6 +305,73 @@ class Timeout(AcceptanceBase):
         if alive:
             os.kill(pid, 9)
         self.assertFalse(alive, "child process of a timed-out check is still running")
+
+
+def kill_quietly(pid: int, sig: int = signal.SIGKILL) -> None:
+    try:
+        os.kill(pid, sig)
+    except (ProcessLookupError, PermissionError):
+        pass
+
+
+def wait_dead(pid: int, seconds: float = 2.0) -> bool:
+    end = time.monotonic() + seconds
+    while time.monotonic() < end:
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            return True
+        time.sleep(0.1)
+    return False
+
+
+class Interrupt(AcceptanceBase):
+    """N-7: Ctrl+C on eqk also stops the tool it started (tools run in their own process group)."""
+
+    example = "typescript-web"
+
+    def test_sigint_kills_tool_process_group(self) -> None:
+        need("npm", "node")
+        if os.name != "posix":
+            self.skipTest("needs POSIX process groups and signals")
+        hang = "require('fs').writeFileSync('child.pid', String(process.pid)); setTimeout(() => {}, 60000)"
+        pkg = json.loads((self.root / "package.json").read_text())
+        pkg["type"] = "commonjs"
+        pkg["scripts"]["test"] = f'node -e "{hang}"'
+        (self.root / "package.json").write_text(json.dumps(pkg))
+        eqk(self.root, "apply", "--profile", "minimal", "--yes")
+        env = dict(os.environ, PYTHONPATH=str(KIT), PYTHONDONTWRITEBYTECODE="1")
+        # eqk in its own session plays the terminal's foreground process group.
+        p = subprocess.Popen(
+            [sys.executable, "-m", "eqk", "verify", "--only", "js.test", "--timeout", "60", str(self.root)],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=env,
+            start_new_session=True,
+        )
+
+        def stop_eqk() -> None:
+            if p.poll() is None:
+                os.killpg(p.pid, signal.SIGKILL)
+                p.wait()
+
+        self.addCleanup(stop_eqk)
+        pidfile = self.root / "child.pid"
+        end = time.monotonic() + 20
+        while not pidfile.exists() and time.monotonic() < end:
+            time.sleep(0.1)
+        self.assertTrue(pidfile.exists(), "tool never started")
+        time.sleep(0.2)  # let the pid write finish
+        tool_pid = int(pidfile.read_text())
+        self.addCleanup(kill_quietly, tool_pid)
+        os.killpg(p.pid, signal.SIGINT)  # what Ctrl+C does
+        try:
+            p.communicate(timeout=15)
+        except subprocess.TimeoutExpired:
+            self.fail("eqk did not exit after SIGINT")
+        self.assertNotEqual(p.returncode, 0)
+        self.assertTrue(wait_dead(tool_pid), "tool process kept running after Ctrl+C on eqk")
+        self.assertFalse((self.root / ".quality/reports/latest.json").exists(), "no report after an interrupt")
 
 
 class AC7ToolUnavailable(AcceptanceBase):
