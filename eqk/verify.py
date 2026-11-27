@@ -120,10 +120,8 @@ def run_check(
             env=_tool_env(out_dir),
             start_new_session=posix,
         )
-        try:
-            stdout, stderr = p.communicate(timeout=timeout)
-            code, output = p.returncode, _text(stdout) + _text(stderr)
-        except subprocess.TimeoutExpired:
+
+        def kill_group() -> None:
             if posix:
                 try:
                     os.killpg(p.pid, signal.SIGKILL)
@@ -131,8 +129,23 @@ def run_check(
                     p.kill()
             else:
                 p.kill()
+
+        try:
+            stdout, stderr = p.communicate(timeout=timeout)
+            code, output = p.returncode, _text(stdout) + _text(stderr)
+        except subprocess.TimeoutExpired:
+            kill_group()
             stdout, stderr = p.communicate()
             code, output = None, f"timed out after {timeout}s\n" + _text(stdout) + _text(stderr)
+        except BaseException:
+            # Ctrl+C reaches only eqk's foreground group, not the tool's own session: stop the
+            # tool too, then let the interrupt stop eqk (no report is written).
+            kill_group()
+            try:
+                p.communicate(timeout=5)
+            except subprocess.TimeoutExpired:
+                pass
+            raise
     except OSError as e:
         r["execution_status"] = "unavailable"
         r["started_at"] = None
