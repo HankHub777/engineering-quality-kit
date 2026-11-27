@@ -1,4 +1,10 @@
-test_manifest_written_when_apply_fails_midway (tests.test_unit.ApplyPartialFailure.test_manifest_written_when_apply_fails_midway) ... ok
+test_file_failing_after_create_is_recorded_and_kept (tests.test_unit.ApplyPartialFailure.test_file_failing_after_create_is_recorded_and_kept)
+N-3: open('x') succeeds but the write fails: the file is in the manifest, revert keeps it. ... ok
+test_manifest_written_when_apply_fails_midway (tests.test_unit.ApplyPartialFailure.test_manifest_written_when_apply_fails_midway)
+A-1: the second file's exclusive-create fails; the first file stays revertible. ... ok
+test_recorded_hash_matches_written_bytes_for_every_template (tests.test_unit.ApplyPartialFailure.test_recorded_hash_matches_written_bytes_for_every_template) ... ok
+test_help_and_version_exit_0 (tests.test_unit.ArgparseExitCodes.test_help_and_version_exit_0) ... ok
+test_usage_errors_exit_4 (tests.test_unit.ArgparseExitCodes.test_usage_errors_exit_4) ... ok
 test_internal_error_exits_5 (tests.test_unit.CliInternalError.test_internal_error_exits_5) ... ok
 test_non_utf8_ini_does_not_crash (tests.test_unit.Detect.test_non_utf8_ini_does_not_crash) ... ok
 test_broken_configs_warn_outside_configs (tests.test_unit.DetectWarnings.test_broken_configs_warn_outside_configs) ... ok
@@ -17,12 +23,24 @@ test_nothing_applicable_is_incomplete (tests.test_unit.Overall.test_nothing_appl
 test_unavailable_gate_is_incomplete (tests.test_unit.Overall.test_unavailable_gate_is_incomplete) ... ok
 test_all_load_and_ids_unique (tests.test_unit.Profiles.test_all_load_and_ids_unique) ... ok
 test_extends (tests.test_unit.Profiles.test_extends) ... ok
+test_verdict_changes_bump_version (tests.test_unit.Profiles.test_verdict_changes_bump_version) ... ok
+test_apply_refuses_symlinked_quality_dir (tests.test_unit.QualityDirSymlinks.test_apply_refuses_symlinked_quality_dir) ... ok
+test_normal_adopted_repo_is_safe (tests.test_unit.QualityDirSymlinks.test_normal_adopted_repo_is_safe) ... ok
+test_revert_refuses_symlinked_quality_dir (tests.test_unit.QualityDirSymlinks.test_revert_refuses_symlinked_quality_dir) ... ok
+test_verify_refuses_symlinked_report (tests.test_unit.QualityDirSymlinks.test_verify_refuses_symlinked_report) ... ok
 test_bearer_token_redacted (tests.test_unit.Redaction.test_bearer_token_redacted) ... ok
 test_paths_and_secrets (tests.test_unit.Redaction.test_paths_and_secrets) ... ok
 test_redaction_stays_on_one_line (tests.test_unit.Redaction.test_redaction_stays_on_one_line) ... ok
 test_preexisting_quality_subdirs_survive_revert (tests.test_unit.RevertPreexistingDirs.test_preexisting_quality_subdirs_survive_revert) ... ok
 test_force_never_deletes_outside_repo (tests.test_unit.RevertSafety.test_force_never_deletes_outside_repo) ... ok
+test_setsid_descendant_holding_pipe_does_not_hang (tests.test_unit.RunCheckProcesses.test_setsid_descendant_holding_pipe_does_not_hang) ... ok
+test_signal_killed_tool_is_unknown (tests.test_unit.RunCheckProcesses.test_signal_killed_tool_is_unknown) ... ok
 test_frontmatter (tests.test_unit.Skill.test_frontmatter) ... ok
+test_config_invalid_json_exits_4 (tests.test_unit.StateVsInternalErrors.test_config_invalid_json_exits_4) ... ok
+test_config_unknown_profile_exits_4 (tests.test_unit.StateVsInternalErrors.test_config_unknown_profile_exits_4) ... ok
+test_config_without_profile_key_exits_4 (tests.test_unit.StateVsInternalErrors.test_config_without_profile_key_exits_4) ... ok
+test_invalid_manifest_exits_4 (tests.test_unit.StateVsInternalErrors.test_invalid_manifest_exits_4) ... ok
+test_profile_bug_keyerror_exits_5 (tests.test_unit.StateVsInternalErrors.test_profile_bug_keyerror_exits_5) ... ok
 test_note_and_file_lines_are_not_errors (tests.test_unit.Summary.test_note_and_file_lines_are_not_errors) ... ok
 test_unknown_skip_or_only_is_usage_error (tests.test_unit.UnknownCheckIds.test_unknown_skip_or_only_is_usage_error) ... ok
 test_inspect_is_read_only (tests.test_acceptance.AC1NewPythonProject.test_inspect_is_read_only) ... ok
@@ -38,12 +56,13 @@ test_apply_refuses_twice (tests.test_acceptance.AC8Revert.test_apply_refuses_twi
 test_revert_keeps_human_edits (tests.test_acceptance.AC8Revert.test_revert_keeps_human_edits) ... ok
 test_revert_restores_tree (tests.test_acceptance.AC8Revert.test_revert_restores_tree) ... ok
 test_docs (tests.test_acceptance.DocsProfile.test_docs) ... ok
+test_sigint_kills_tool_process_group (tests.test_acceptance.Interrupt.test_sigint_kills_tool_process_group) ... ok
 test_timeout (tests.test_acceptance.Timeout.test_timeout) ... ok
 test_ruff_config_error_is_unknown (tests.test_acceptance.ToolErrorIsNotAVerdict.test_ruff_config_error_is_unknown) ... ok
 test_verify_only (tests.test_acceptance.VerifyWithoutAdoption.test_verify_only) ... ok
 
 ----------------------------------------------------------------------
-Ran 43 tests in 11.258s
+Ran 60 tests in 19.440s
 
 OK
 unittest exit=0

@@ -1,12 +1,12 @@
 # P0 PoC report
 
-Run: 2026-11-26 (after review round 1; first run 2026-11-09), macOS arm64, Python 3.12.10, ruff 0.17.4, pytest 9.2.0, mypy 2.4.1,
+Run: 2026-11-27 (after review round 2; first run 2026-11-09), macOS arm64, Python 3.12.10, ruff 0.17.4, pytest 9.2.0, mypy 2.4.1,
 tsc 5.9.3, Node 24.16.0, markdownlint-cli2 0.24.0. Full environment:
 [poc-evidence/environment.txt](poc-evidence/environment.txt).
 
 Reproduce: put the tools on `PATH`, then `scripts/poc_evidence.sh`.
 
-**Result: 43 tests, 43 passed, 0 skipped** ([test-run.txt](poc-evidence/test-run.txt)).
+**Result: 60 tests, 60 passed, 0 skipped** ([test-run.txt](poc-evidence/test-run.txt)).
 
 ## Acceptance criteria
 
@@ -69,6 +69,34 @@ Side effect of A-2 on this script: undoing an adoption with `git reset` leaves e
 ignored run outputs behind, which the next `apply` now treats as pre-existing. The
 evidence script therefore runs `git clean -fdx` before re-applying.
 
+### Reviewer decisions on round 1
+
+- **V-1** (exit 5 = internal error): confirmed; completed by N-6.
+- **V-2** (exit-code maps): confirmed, including pytest exit 2 staying `fail` (collection
+  errors are real defects). Signal kills are handled by N-9.
+- **A-2 side effect**: accepted. Run-output dirs left by an adoption undone with
+  `git reset` are treated as pre-existing and survive `revert` (fails toward keeping
+  data). Documented (N-10); no marker files.
+- **N-2**: `verify` refuses (exit 4) when `.quality` is unsafe; no temp-dir fallback, so CI
+  reading `.quality/reports/latest.json` cannot silently read a stale report.
+
+## Defects found by review round 2 and fixed
+
+Branch `fix/review-round-2`, one commit per item. "Reproduced" means a test showed the
+defect before the code was changed.
+
+| ID | Defect | Reproduced? | Fix | Test |
+|---|---|---|---|---|
+| N-2 | A symlink in `.quality` let revert delete, apply create, and verify overwrite files outside the repo | yes (all three) | `quality_dir_safe()`; apply, revert and verify (default output) refuse with exit 4 | `QualityDirSymlinks` |
+| N-7 | Ctrl+C stopped eqk but left the tool's process group running (side effect of V-3) | yes | kill the tool's group on any interrupt, bounded cleanup, re-raise; no report | `Interrupt` |
+| N-6 | An eqk bug raising `KeyError` exited 4; invalid `eqk.json` / `applied.json` exited 5 or 4 by accident | yes | only `RuntimeError` = usage/state error; invalid config/manifest → `RuntimeError` | `StateVsInternalErrors` |
+| N-1 | Invalid command-line arguments exited 2 ("incomplete") | yes | parser `error()` exits 4 | `ArgparseExitCodes` |
+| N-3 | A file whose write failed after `open('x')` was not in the manifest | yes | hash from content; record right after `open('x')` | `ApplyPartialFailure` |
+| N-4 | Profiles changed by V-2 still said `0.1.0` | n/a | `minimal`, `python-data`, `typescript-web` → `0.1.1`; pinned (version, hash) test; AGENTS.md rule | `Profiles.test_verdict_changes_bump_version` |
+| N-8 | After a timeout, a `setsid` descendant holding the pipe made output collection wait forever | yes (2s timeout ran past a 20s hard limit) | second `communicate()` bounded to 5s; limitation added | `RunCheckProcesses` |
+| N-9 | A tool killed by a signal (exit −9) was reported as `fail` | yes | negative exit code → `unknown` + limitation | `RunCheckProcesses` |
+| N-5, N-10 | Windows timeout gap; A-2 side effect undocumented | n/a | LIMITATIONS updated (+ P1 row) | — |
+
 ## Not verified (honest gaps)
 
 - Windows and Linux (only macOS arm64 was run). Repo-venv lookup includes `Scripts/`
@@ -77,8 +105,9 @@ evidence script therefore runs `git clean -fdx` before re-applying.
 - Real-world repos: only the 4 bundled examples. No monorepo, no repo with both
   Python and TS, no repo with broken/partial config.
 - `ts.lint` (ESLint) and `docs.vale` executed paths — only their `not_applicable` paths ran.
-- Timeout handling is tested only through `npm test` on POSIX; Windows only kills the
-  direct child (no process-group kill).
+- Timeout and interrupt handling are tested on POSIX only (`npm test`, a forking Python
+  script, SIGINT, SIGKILL); Windows only kills the direct child (no process-group kill).
+- Symlink refusal (N-2) is tested on macOS; Windows without symlink privilege skips it.
 - The Agent Skill's behavioural cases ([evals/cases.json](../skills/quality-adoption/evals/cases.json))
   have **not** been run against an agent; only the skill's format is tested.
 - Redaction is pattern-based; it is a safety net, not a guarantee.
