@@ -466,6 +466,14 @@ class RunCheckProcesses(TempRepo):
         self.assertTrue((self.base / "out" / r["evidence_ref"]).is_file())
         self.assertLess(elapsed, 2 + 5 + 4)
 
+    def test_signal_killed_tool_is_unknown(self) -> None:
+        script = "import os, signal\nprint('about to die', flush=True)\nos.kill(os.getpid(), signal.SIGKILL)\n"
+        r, _ = self.drive(script, timeout=30, hard_limit=30)
+        self.assertEqual(r["exit_code"], -9)
+        self.assertEqual((r["execution_status"], r["result_status"]), ("executed", "unknown"))
+        self.assertIn("terminated by signal 9; the tool produced no verdict", r["limitations"])
+        self.assertTrue((self.base / "out" / r["evidence_ref"]).is_file())
+
 
 class Profiles(unittest.TestCase):
     def test_all_load_and_ids_unique(self) -> None:

@@ -176,6 +176,11 @@ def run_check(
         r["result_status"] = "unknown"
         r["limitations"].append(f"timed out after {timeout}s")
         return r
+    if code < 0:  # POSIX: killed by a signal (e.g. -9 from the OOM killer): no verdict from any tool
+        r["result_status"] = "unknown"
+        r["limitations"].append(f"terminated by signal {-code}; the tool produced no verdict")
+        r["summary"]["warnings"] = _summarize(output)
+        return r
     mapped = check.get("exit_codes", {"0": "pass"}).get(str(code))
     if mapped is None:
         mapped = "fail" if check["gate"] else "warning"
