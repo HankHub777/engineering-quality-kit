@@ -1,7 +1,7 @@
 """Command line: inspect -> plan -> apply -> verify (-> revert).
 
 Exit codes: 0 ok/pass · 1 quality gate failed · 2 incomplete (some gate has no evidence)
-            3 not applied (missing --yes) · 4 usage / state error
+            3 not applied (missing --yes) · 4 usage / state error · 5 internal error (eqk bug)
 """
 
 from __future__ import annotations
@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import traceback
 from pathlib import Path
 
 from . import __version__, adoption, inspection, verify
@@ -102,4 +103,8 @@ def main(argv: list[str] | None = None) -> int:
     except (RuntimeError, KeyError) as e:
         print(f"eqk: {e}", file=sys.stderr)
         return 4
+    except Exception:  # an eqk bug must not look like a gate failure (exit 1)
+        traceback.print_exc()
+        print("eqk: internal error (this is a bug in eqk, not a quality result)", file=sys.stderr)
+        return 5
     return 4

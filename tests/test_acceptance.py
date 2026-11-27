@@ -16,6 +16,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
@@ -245,6 +246,64 @@ class AC6NotRunIsNotPass(AcceptanceBase):
         self.assertEqual(eqk(self.root, "verify").returncode, 2)
         t = check(latest_report(self.root), "py.test")
         self.assertEqual((t["execution_status"], t["exit_code"], t["result_status"]), ("executed", 5, "unknown"))
+
+
+class ToolErrorIsNotAVerdict(AcceptanceBase):
+    """V-2: a tool that cannot give a verdict (bad config) is unknown, not a quality fail."""
+
+    example = "python-new"
+
+    def test_ruff_config_error_is_unknown(self) -> None:
+        need("ruff", "pytest")
+        (self.root / "ruff.toml").write_text('[lint]\nselect = ["NOPE999"]\n')
+        eqk(self.root, "apply", "--profile", "python-data", "--yes")
+        r = eqk(self.root, "verify")
+        self.assertEqual(r.returncode, 2, r.stdout)
+        rep = latest_report(self.root)
+        self.assertValidReport(rep)
+        lint = check(rep, "py.lint")
+        self.assertEqual(
+            (lint["execution_status"], lint["exit_code"], lint["result_status"]), ("executed", 2, "unknown")
+        )
+        self.assertTrue(any("no verdict" in x for x in lint["limitations"]), lint["limitations"])
+        self.assertEqual(rep["overall"]["status"], "incomplete")
+
+
+class Timeout(AcceptanceBase):
+    """V-3: a check that exceeds --timeout is executed/unknown, its output is text, and its children die."""
+
+    example = "typescript-web"
+
+    def test_timeout(self) -> None:
+        need("npm", "node")
+        hang = "require('fs').writeFileSync('child.pid', String(process.pid)); console.log('started'); setTimeout(() => {}, 60000)"
+        pkg = json.loads((self.root / "package.json").read_text())
+        pkg["type"] = "commonjs"
+        pkg["scripts"]["test"] = f'node -e "{hang}"'
+        (self.root / "package.json").write_text(json.dumps(pkg))
+        eqk(self.root, "apply", "--profile", "minimal", "--yes")
+        r = eqk(self.root, "verify", "--only", "js.test", "--timeout", "3")
+        self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
+        rep = latest_report(self.root)
+        self.assertValidReport(rep)
+        t = check(rep, "js.test")
+        self.assertEqual((t["execution_status"], t["result_status"]), ("executed", "unknown"))
+        self.assertIn("timed out after 3s", t["limitations"])
+        log = (self.root / ".quality" / t["evidence_ref"]).read_text()
+        self.assertNotIn("b'", log)
+        self.assertIn("started", log)
+        pid = int((self.root / "child.pid").read_text())
+        alive = True
+        for _ in range(20):
+            try:
+                os.kill(pid, 0)
+            except ProcessLookupError:
+                alive = False
+                break
+            time.sleep(0.1)
+        if alive:
+            os.kill(pid, 9)
+        self.assertFalse(alive, "child process of a timed-out check is still running")
 
 
 class AC7ToolUnavailable(AcceptanceBase):

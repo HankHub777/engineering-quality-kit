@@ -35,7 +35,8 @@ python -m eqk verify  [PATH] [--profile NAME] [--skip ids] [--only ids] [--json]
 python -m eqk revert  [PATH]
 ```
 
-Exit codes: 0 pass · 1 gate failed · 2 incomplete · 3 not applied · 4 usage/state error.
+Exit codes: 0 pass · 1 gate failed · 2 incomplete · 3 not applied · 4 usage/state error ·
+5 internal eqk error (report it as an eqk bug, never as a quality result).
 
 ## Choosing a profile
 

@@ -1,15 +1,30 @@
+test_manifest_written_when_apply_fails_midway (tests.test_unit.ApplyPartialFailure.test_manifest_written_when_apply_fails_midway) ... ok
+test_internal_error_exits_5 (tests.test_unit.CliInternalError.test_internal_error_exits_5) ... ok
+test_non_utf8_ini_does_not_crash (tests.test_unit.Detect.test_non_utf8_ini_does_not_crash) ... ok
+test_broken_configs_warn_outside_configs (tests.test_unit.DetectWarnings.test_broken_configs_warn_outside_configs) ... ok
+test_no_warnings_key_is_empty_list (tests.test_unit.DetectWarnings.test_no_warnings_key_is_empty_list) ... ok
+test_truncated_scan_warns_and_reaches_report (tests.test_unit.FileScanCap.test_truncated_scan_warns_and_reaches_report) ... ok
 test_not_run_pass_rejected (tests.test_unit.Invariants.test_not_run_pass_rejected) ... ok
+test_not_run_with_verdict_rejected (tests.test_unit.Invariants.test_not_run_with_verdict_rejected) ... ok
 test_ok (tests.test_unit.Invariants.test_ok) ... ok
+test_overall_pass_without_passing_gate_rejected (tests.test_unit.Invariants.test_overall_pass_without_passing_gate_rejected) ... ok
 test_pass_without_evidence_rejected (tests.test_unit.Invariants.test_pass_without_evidence_rejected) ... ok
 test_all_gates_pass (tests.test_unit.Overall.test_all_gates_pass) ... ok
 test_any_gate_fail (tests.test_unit.Overall.test_any_gate_fail) ... ok
+test_gate_not_run_is_incomplete (tests.test_unit.Overall.test_gate_not_run_is_incomplete) ... ok
 test_non_gate_fail_does_not_block (tests.test_unit.Overall.test_non_gate_fail_does_not_block) ... ok
 test_nothing_applicable_is_incomplete (tests.test_unit.Overall.test_nothing_applicable_is_incomplete) ... ok
 test_unavailable_gate_is_incomplete (tests.test_unit.Overall.test_unavailable_gate_is_incomplete) ... ok
 test_all_load_and_ids_unique (tests.test_unit.Profiles.test_all_load_and_ids_unique) ... ok
 test_extends (tests.test_unit.Profiles.test_extends) ... ok
+test_bearer_token_redacted (tests.test_unit.Redaction.test_bearer_token_redacted) ... ok
 test_paths_and_secrets (tests.test_unit.Redaction.test_paths_and_secrets) ... ok
+test_redaction_stays_on_one_line (tests.test_unit.Redaction.test_redaction_stays_on_one_line) ... ok
+test_preexisting_quality_subdirs_survive_revert (tests.test_unit.RevertPreexistingDirs.test_preexisting_quality_subdirs_survive_revert) ... ok
+test_force_never_deletes_outside_repo (tests.test_unit.RevertSafety.test_force_never_deletes_outside_repo) ... ok
 test_frontmatter (tests.test_unit.Skill.test_frontmatter) ... ok
+test_note_and_file_lines_are_not_errors (tests.test_unit.Summary.test_note_and_file_lines_are_not_errors) ... ok
+test_unknown_skip_or_only_is_usage_error (tests.test_unit.UnknownCheckIds.test_unknown_skip_or_only_is_usage_error) ... ok
 test_inspect_is_read_only (tests.test_acceptance.AC1NewPythonProject.test_inspect_is_read_only) ... ok
 test_plan_then_apply_then_verify_pass (tests.test_acceptance.AC1NewPythonProject.test_plan_then_apply_then_verify_pass) ... ok
 test_existing_config_untouched (tests.test_acceptance.AC2ExistingPythonProject.test_existing_config_untouched) ... ok
@@ -23,10 +38,12 @@ test_apply_refuses_twice (tests.test_acceptance.AC8Revert.test_apply_refuses_twi
 test_revert_keeps_human_edits (tests.test_acceptance.AC8Revert.test_revert_keeps_human_edits) ... ok
 test_revert_restores_tree (tests.test_acceptance.AC8Revert.test_revert_restores_tree) ... ok
 test_docs (tests.test_acceptance.DocsProfile.test_docs) ... ok
+test_timeout (tests.test_acceptance.Timeout.test_timeout) ... ok
+test_ruff_config_error_is_unknown (tests.test_acceptance.ToolErrorIsNotAVerdict.test_ruff_config_error_is_unknown) ... ok
 test_verify_only (tests.test_acceptance.VerifyWithoutAdoption.test_verify_only) ... ok
 
 ----------------------------------------------------------------------
-Ran 26 tests in 6.865s
+Ran 43 tests in 11.258s
 
 OK
 unittest exit=0

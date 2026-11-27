@@ -1,12 +1,12 @@
 # P0 PoC report
 
-Run: 2026-11-09, macOS arm64, Python 3.12.10, ruff 0.17.4, pytest 9.2.0, mypy 2.4.1,
+Run: 2026-11-26 (after review round 1; first run 2026-11-09), macOS arm64, Python 3.12.10, ruff 0.17.4, pytest 9.2.0, mypy 2.4.1,
 tsc 5.9.3, Node 24.16.0, markdownlint-cli2 0.24.0. Full environment:
 [poc-evidence/environment.txt](poc-evidence/environment.txt).
 
 Reproduce: put the tools on `PATH`, then `scripts/poc_evidence.sh`.
 
-**Result: 26 tests, 26 passed, 0 skipped** ([test-run.txt](poc-evidence/test-run.txt)).
+**Result: 43 tests, 43 passed, 0 skipped** ([test-run.txt](poc-evidence/test-run.txt)).
 
 ## Acceptance criteria
 
@@ -43,6 +43,32 @@ Reproduce: put the tools on `PATH`, then `scripts/poc_evidence.sh`.
    A clean checkout's `pytest` could not import `eqk`. Fix: `pythonpath = ["."]` in
    `pyproject.toml`; the script now unsets `PYTHONPATH` for the self-check.
 
+## Defects found by review and fixed
+
+Review round 1 (branch `fix/review-round-1`, one commit per item). Each fix has a test
+that failed before the fix.
+
+| ID | Defect | Fix | Test |
+|---|---|---|---|
+| A-3 | `revert --force` could delete files outside the repo via a crafted `applied.json` (`../x`, absolute path) | Paths outside the repo are refused and listed as kept, even with `--force` | `RevertSafety` |
+| V-5 | `Authorization: Bearer <token>` leaked the token; redaction crossed newlines | Scheme-aware value, single-line separator | `Redaction.test_bearer_*`, `test_redaction_stays_on_one_line` |
+| A-1 | A failure midway through `apply` left created files with no manifest | Manifest written in `finally` | `ApplyPartialFailure` |
+| V-1 | An internal crash exited 1 ("gate failed") | **New exit code 5 = internal error** | `CliInternalError` |
+| I-1 | Non-UTF-8 `setup.cfg` / `tox.ini` crashed inspect/plan/apply/verify | `UnicodeDecodeError` caught | `Detect` |
+| T-1 | Duplicate `overall` test; invariant rules 2 and 3 untested | Tests fixed / added | `Overall`, `Invariants` |
+| V-2 | Tool errors (ruff 2, pytest 3/4, mypy 2) reported as quality `fail` | **Profile exit-code maps now give `unknown`** (data only) | `ToolErrorIsNotAVerdict` |
+| V-4 | Unknown ids in `--skip` / `--only` silently accepted | Usage error (exit 4) listing available ids | `UnknownCheckIds` |
+| V-3 | Timeout evidence stored as `b'...'`; npm's child `node` kept running after timeout (reproduced) | Output decoded; checks run in their own process group on POSIX, group killed on timeout | `Timeout` (first timeout test) |
+| I-2 | Detection warnings stored inside `configs`; broken `package.json` silent | Top-level `warnings`, shown by inspect and plan | `DetectWarnings` |
+| I-3 | File-walk cap (50,000) truncated silently | Warning; detection warnings copied into report `limitations` | `FileScanCap` |
+| A-2 | `revert` deleted pre-existing `.quality/{evidence,reports,cache}` | Manifest records `preexisting_dirs`; revert skips them | `RevertPreexistingDirs` |
+| V-6 | Error hint `"e:"` matched `note:`, `file:` … | Removed; F401 / TS2322 still in summaries | `Summary`, AC-2/AC-3 |
+| I-4, I-5 | `modified_files: []` reads like a measurement; detection scope gaps undocumented | README and LIMITATIONS updated | — |
+
+Side effect of A-2 on this script: undoing an adoption with `git reset` leaves eqk's
+ignored run outputs behind, which the next `apply` now treats as pre-existing. The
+evidence script therefore runs `git clean -fdx` before re-applying.
+
 ## Not verified (honest gaps)
 
 - Windows and Linux (only macOS arm64 was run). Repo-venv lookup includes `Scripts/`
@@ -51,7 +77,8 @@ Reproduce: put the tools on `PATH`, then `scripts/poc_evidence.sh`.
 - Real-world repos: only the 4 bundled examples. No monorepo, no repo with both
   Python and TS, no repo with broken/partial config.
 - `ts.lint` (ESLint) and `docs.vale` executed paths — only their `not_applicable` paths ran.
-- Timeout handling (`--timeout`) has no test.
+- Timeout handling is tested only through `npm test` on POSIX; Windows only kills the
+  direct child (no process-group kill).
 - The Agent Skill's behavioural cases ([evals/cases.json](../skills/quality-adoption/evals/cases.json))
   have **not** been run against an agent; only the skill's format is tested.
 - Redaction is pattern-based; it is a safety net, not a guarantee.

@@ -8,6 +8,7 @@ from fnmatch import fnmatch
 from pathlib import Path
 
 from . import profiles as profiles_mod
+from . import util
 from .util import git_state, resolve_tool, walk_files
 
 try:  # Python 3.11+
@@ -41,7 +42,7 @@ def _ini_has(path: Path, section: str) -> bool:
     cp = configparser.ConfigParser()
     try:
         cp.read(path, encoding="utf-8")
-    except configparser.Error:
+    except (configparser.Error, UnicodeDecodeError):  # odd user config must not crash inspect
         return False
     return cp.has_section(section)
 
@@ -110,8 +111,13 @@ def detect(root: Path) -> dict:
         ),
         "eqk": [".quality/eqk.json"] if (root / ".quality/eqk.json").is_file() else [],
     }
+    warnings: list[str] = []
+    if len(files) >= util.MAX_FILES:
+        warnings.append(f"file scan stopped at {len(files)} files; language/config detection may be incomplete")
     if pyproject.get("__unparseable__"):
-        configs["warnings"] = ["pyproject.toml could not be parsed; config detection may be incomplete"]
+        warnings.append("pyproject.toml could not be parsed; config detection may be incomplete")
+    if pkg.get("__unparseable__"):
+        warnings.append("package.json could not be parsed; npm test script detection may be incomplete")
 
     return {
         "languages": languages,
@@ -123,6 +129,7 @@ def detect(root: Path) -> dict:
         },
         "configs": configs,
         "git": git_state(root),
+        "warnings": warnings,
     }
 
 
@@ -156,7 +163,9 @@ def inspect_repo(root: Path) -> dict:
     info["tools"] = tool_availability(root)
     prof, why = suggest_profile(info)
     info["suggested_profile"] = {"id": prof, "reason": why}
-    info["modified_files"] = []  # inspect is read-only by contract; tests assert this.
+    # Contract declaration, not a measurement: inspect writes nothing. Verified by the
+    # snapshot test AC1NewPythonProject.test_inspect_is_read_only, not computed here.
+    info["modified_files"] = []
     return info
 
 
@@ -177,6 +186,8 @@ def render(info: dict) -> str:
     for key, val in info["configs"].items():
         if val:
             lines.append(f"  - {key}: {', '.join(val[:5])}{' …' if len(val) > 5 else ''}")
+    if info.get("warnings"):
+        lines += ["", "Warnings:"] + [f"  ! {w}" for w in info["warnings"]]
     lines.append("")
     lines.append("Tools:")
     for name, t in info["tools"].items():

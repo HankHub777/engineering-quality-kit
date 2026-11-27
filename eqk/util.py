@@ -96,7 +96,9 @@ def resolve_tool(name: str, root: Path) -> tuple[str | None, str | None]:
 
 
 _SECRET_RE = re.compile(
-    r"(?i)\b(api[_-]?key|access[_-]?token|token|secret|passw(?:or)?d|authorization)(\s*[:=]\s*|\s+)(\S+)"
+    r"(?i)\b(api[_-]?key|access[_-]?token|token|secret|passw(?:or)?d|authorization)"
+    r"([ \t]*[:=][ \t]*|[ \t]+)"  # separator stays on one line
+    r"((?:bearer|basic)[ \t]+\S+|\S+)"  # value, including an auth scheme prefix
 )
 _TOKEN_SHAPES = re.compile(r"\b(gh[pousr]_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16})\b")
 

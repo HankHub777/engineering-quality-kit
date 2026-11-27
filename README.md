@@ -30,6 +30,7 @@ python -m eqk revert  PATH                         # remove exactly what apply c
 | 2 | incomplete — no failure, but some gate has no passing evidence (tool missing, skipped, no tests) |
 | 3 | apply without `--yes`: plan printed, nothing written |
 | 4 | usage / state error (e.g. already applied, revert kept edited files) |
+| 5 | internal error — eqk itself crashed; not a statement about the code under test |
 
 ## Profiles
 
@@ -46,7 +47,9 @@ manifest `.quality/applied.json`.
 
 ## Safety contract for existing repos
 
-- `inspect` and `plan` write nothing. `apply` needs `--yes`.
+- `inspect` and `plan` write nothing. `apply` needs `--yes`. (The `modified_files: []`
+  field in `inspect --json` declares this contract; it is not measured at run time. The
+  acceptance tests verify it with a before/after snapshot of the repo.)
 - `apply` only **creates** files that don't exist (opened with exclusive-create). It
   never edits, reformats, or deletes existing files, CI, pre-commit, or merge policy.
 - `verify` keeps tool caches in `.quality/cache/` and writes nothing into an
