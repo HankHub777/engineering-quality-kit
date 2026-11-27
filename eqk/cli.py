@@ -100,7 +100,7 @@ def main(argv: list[str] | None = None) -> int:
             for k in res["kept"]:
                 print(f"kept    {k['path']} ({k['reason']})")
             return 0 if res["complete"] else 4
-    except (RuntimeError, KeyError) as e:
+    except RuntimeError as e:  # usage / state errors; anything else is an eqk bug (exit 5)
         print(f"eqk: {e}", file=sys.stderr)
         return 4
     except Exception:  # an eqk bug must not look like a gate failure (exit 1)

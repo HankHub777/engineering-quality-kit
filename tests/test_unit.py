@@ -178,6 +178,48 @@ class CliInternalError(TempRepo):
         self.assertEqual(code, 5)
 
 
+class StateVsInternalErrors(TempRepo):
+    """N-6: bad user state -> exit 4; an eqk bug (e.g. KeyError) -> exit 5."""
+
+    def run_cli(self, *args: str) -> int:
+        with mock.patch("sys.stderr", new_callable=io.StringIO) as err:
+            code = cli.main([*args, str(self.root)])
+        self.stderr = err.getvalue()
+        return code
+
+    def write_cfg(self, text: str) -> None:
+        (self.root / ".quality").mkdir(exist_ok=True)
+        (self.root / adoption.CONFIG).write_text(text)
+
+    def test_profile_bug_keyerror_exits_5(self) -> None:
+        broken = {"id": "minimal", "version": "0", "checks": [{"id": "x.noargs", "tool": "python3", "gate": True}]}
+        with mock.patch("eqk.profiles.load", return_value=broken):
+            code = self.run_cli("verify", "--profile", "minimal", "--out", str(self.base / "out"))
+        self.assertEqual(code, 5, self.stderr)
+
+    def test_config_unknown_profile_exits_4(self) -> None:
+        self.write_cfg('{"profile": "nope"}')
+        self.assertEqual(self.run_cli("verify"), 4, self.stderr)
+        self.assertIn("unknown profile", self.stderr)
+
+    def test_config_invalid_json_exits_4(self) -> None:
+        self.write_cfg("{not json")
+        self.assertEqual(self.run_cli("verify"), 4, self.stderr)
+        self.assertIn("eqk.json is invalid", self.stderr)
+
+    def test_config_without_profile_key_exits_4(self) -> None:
+        self.write_cfg("{}")
+        self.assertEqual(self.run_cli("verify"), 4, self.stderr)
+        self.assertIn("eqk.json is invalid", self.stderr)
+
+    def test_invalid_manifest_exits_4(self) -> None:
+        for text in ("{not json", "{}"):
+            (self.root / ".quality").mkdir(exist_ok=True)
+            (self.root / adoption.MANIFEST).write_text(text)
+            self.assertEqual(self.run_cli("revert"), 4, self.stderr)
+            self.assertIn("applied.json is invalid", self.stderr)
+
+
 class UnknownCheckIds(TempRepo):
     def test_unknown_skip_or_only_is_usage_error(self) -> None:
         out = self.base / "out"

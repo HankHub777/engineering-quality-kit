@@ -223,7 +223,10 @@ def verify(
     if profile_id is None:
         if not cfg_path.is_file():
             raise RuntimeError("no profile: pass --profile, or run `eqk apply` first")
-        profile_id = json.loads(cfg_path.read_text(encoding="utf-8"))["profile"]
+        try:
+            profile_id = json.loads(cfg_path.read_text(encoding="utf-8"))["profile"]
+        except (json.JSONDecodeError, KeyError, TypeError) as e:
+            raise RuntimeError(f"{CONFIG} is invalid: {e!r}; re-run eqk apply or pass --profile") from None
     prof = profiles_mod.load(profile_id)
     known = {c["id"] for c in prof["checks"]}
     unknown = ((skip or set()) | (only or set())) - known

@@ -16,7 +16,7 @@ def list_ids() -> list[str]:
 def _raw(profile_id: str) -> dict:
     path = PROFILE_DIR / f"{profile_id}.json"
     if not path.is_file():
-        raise KeyError(f"unknown profile {profile_id!r}; available: {', '.join(list_ids())}")
+        raise RuntimeError(f"unknown profile {profile_id!r}; available: {', '.join(list_ids())}")
     return json.loads(path.read_text(encoding="utf-8"))
 
 

@@ -220,23 +220,27 @@ def revert(root: Path, force: bool = False) -> dict:
         raise RuntimeError(why)
     if mpath.is_symlink():
         raise RuntimeError(f"{MANIFEST} is a symlink; refusing")
-    manifest = json.loads(mpath.read_text(encoding="utf-8"))
+    try:
+        manifest = json.loads(mpath.read_text(encoding="utf-8"))
+        items = [(item["path"], item["sha256"]) for item in manifest["created"]]
+    except (json.JSONDecodeError, KeyError, TypeError) as e:
+        raise RuntimeError(f"{MANIFEST} is invalid: {e!r}; inspect it, or remove eqk files by hand") from None
     removed, kept = [], []
     root_resolved = root.resolve()
-    for item in manifest["created"]:
-        p = root / item["path"]
+    for rel, digest in items:
+        p = root / rel
         # The manifest is a committed file and may come from an untrusted clone: never touch
         # anything that is not inside this repository, not even with --force.
-        if Path(item["path"]).is_absolute() or not p.resolve().is_relative_to(root_resolved):
-            kept.append({"path": item["path"], "reason": "path outside repository; refusing"})
+        if Path(rel).is_absolute() or not p.resolve().is_relative_to(root_resolved):
+            kept.append({"path": rel, "reason": "path outside repository; refusing"})
             continue
         if not p.exists():
             continue
-        if sha256_file(p) != item["sha256"] and not force:
-            kept.append({"path": item["path"], "reason": "edited since apply; keeping it (use --force to remove)"})
+        if sha256_file(p) != digest and not force:
+            kept.append({"path": rel, "reason": "edited since apply; keeping it (use --force to remove)"})
             continue
         p.unlink()
-        removed.append(item["path"])
+        removed.append(rel)
     if kept:
         return {"removed": removed, "kept": kept, "complete": False}
     # Generated run outputs are gitignored by eqk itself; remove them with the rest.
