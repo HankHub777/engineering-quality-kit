@@ -1,7 +1,8 @@
 """Command line: inspect -> plan -> apply -> verify (-> revert).
 
 Exit codes: 0 ok/pass · 1 quality gate failed · 2 incomplete (some gate has no evidence)
-            3 not applied (missing --yes) · 4 usage / state error · 5 internal error (eqk bug)
+            3 not applied (missing --yes) · 4 usage / state error (incl. invalid arguments)
+            5 internal error (eqk bug)
 """
 
 from __future__ import annotations
@@ -11,9 +12,18 @@ import json
 import sys
 import traceback
 from pathlib import Path
+from typing import NoReturn
 
 from . import __version__, adoption, inspection, verify
 from . import profiles as profiles_mod
+
+
+class _ArgumentParser(argparse.ArgumentParser):
+    """argparse exits 2 on bad arguments, which eqk uses for "incomplete"; use 4 (usage error)."""
+
+    def error(self, message: str) -> NoReturn:
+        self.print_usage(sys.stderr)
+        self.exit(4, f"{self.prog}: error: {message}\n")
 
 
 def _csv(s: str | None) -> set[str] | None:
@@ -21,9 +31,9 @@ def _csv(s: str | None) -> set[str] | None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(prog="eqk", description="Engineering Quality Kit")
+    ap = _ArgumentParser(prog="eqk", description="Engineering Quality Kit")
     ap.add_argument("--version", action="version", version=f"eqk {__version__}")
-    sub = ap.add_subparsers(dest="cmd", required=True)
+    sub = ap.add_subparsers(dest="cmd", required=True, parser_class=_ArgumentParser)
 
     p = sub.add_parser("inspect", help="read-only: detect languages, existing config, tools")
     p.add_argument("path", nargs="?", default=".")

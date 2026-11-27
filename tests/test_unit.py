@@ -220,6 +220,26 @@ class StateVsInternalErrors(TempRepo):
             self.assertIn("applied.json is invalid", self.stderr)
 
 
+class ArgparseExitCodes(unittest.TestCase):
+    """N-1: bad command-line arguments exit 4, never 2 ("incomplete")."""
+
+    def exit_code(self, *argv: str) -> object:
+        with mock.patch("sys.stdout", new_callable=io.StringIO), mock.patch("sys.stderr", new_callable=io.StringIO):
+            with self.assertRaises(SystemExit) as cm:
+                cli.main(list(argv))
+        return cm.exception.code
+
+    def test_usage_errors_exit_4(self) -> None:
+        self.assertEqual(self.exit_code("verify", "--profile", "nope", "."), 4)
+        self.assertEqual(self.exit_code("verify", "--no-such-flag", "."), 4)
+        self.assertEqual(self.exit_code(), 4)
+
+    def test_help_and_version_exit_0(self) -> None:
+        self.assertIn(self.exit_code("--help"), (0, None))
+        self.assertIn(self.exit_code("--version"), (0, None))
+        self.assertIn(self.exit_code("verify", "--help"), (0, None))
+
+
 class UnknownCheckIds(TempRepo):
     def test_unknown_skip_or_only_is_usage_error(self) -> None:
         out = self.base / "out"
