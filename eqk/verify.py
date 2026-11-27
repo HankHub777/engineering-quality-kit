@@ -135,7 +135,17 @@ def run_check(
             code, output = p.returncode, _text(stdout) + _text(stderr)
         except subprocess.TimeoutExpired:
             kill_group()
-            stdout, stderr = p.communicate()
+            try:
+                stdout, stderr = p.communicate(timeout=5)
+            except subprocess.TimeoutExpired as e:
+                # A descendant that left the group (setsid) still holds the pipe: stop reading.
+                stdout, stderr = _text(e.output), _text(e.stderr)
+                for pipe in (p.stdout, p.stderr):
+                    if pipe is not None:
+                        pipe.close()
+                r["limitations"].append(
+                    "output after the timeout could not be fully collected; a descendant process may still be running"
+                )
             code, output = None, f"timed out after {timeout}s\n" + _text(stdout) + _text(stderr)
         except BaseException:
             # Ctrl+C reaches only eqk's foreground group, not the tool's own session: stop the

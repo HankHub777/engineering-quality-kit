@@ -7,7 +7,11 @@ import io
 import json
 import os
 import re
+import signal
+import subprocess
+import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -388,6 +392,79 @@ class QualityDirSymlinks(TempRepo):
         adoption.apply(self.root, "minimal")
         ok, why = adoption.quality_dir_safe(self.root)
         self.assertTrue(ok, why)
+
+
+RUN_CHECK_DRIVER = """
+import json, sys
+from pathlib import Path
+from eqk.verify import run_check
+args = json.loads(sys.argv[1])
+check = {"id": args["id"], "tool": "python3", "args": ["-c", args["script"], *args.get("argv", [])], "gate": True}
+root, out = Path(args["root"]), Path(args["out"])
+r = run_check(check, root, {"languages": [], "configs": {}}, out, "run", set(), None, args["timeout"])
+print(json.dumps(r))
+"""
+
+
+class RunCheckProcesses(TempRepo):
+    """N-8 / N-9: run_check against misbehaving tools, driven in a subprocess with a hard limit."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        if os.name != "posix":
+            self.skipTest("needs POSIX fork/setsid/signals")
+
+    def drive(self, script: str, timeout: int, hard_limit: float, argv: tuple[str, ...] = ()) -> tuple[dict, float]:
+        payload = {
+            "id": "x.proc",
+            "script": script,
+            "argv": list(argv),
+            "root": str(self.root),
+            "out": str(self.base / "out"),
+            "timeout": timeout,
+        }
+        env = dict(os.environ, PYTHONPATH=str(KIT), PYTHONDONTWRITEBYTECODE="1")
+        started = time.monotonic()
+        try:
+            p = subprocess.run(
+                [sys.executable, "-c", RUN_CHECK_DRIVER, json.dumps(payload)],
+                capture_output=True,
+                text=True,
+                env=env,
+                timeout=hard_limit,
+            )
+        except subprocess.TimeoutExpired:
+            self.fail(f"run_check did not return within {hard_limit}s (timeout={timeout}s): it hangs")
+        self.assertEqual(p.returncode, 0, p.stderr)
+        return json.loads(p.stdout), time.monotonic() - started
+
+    def test_setsid_descendant_holding_pipe_does_not_hang(self) -> None:
+        pidfile = self.base / "orphan.pid"
+
+        def cleanup() -> None:
+            if pidfile.exists():
+                try:
+                    os.kill(int(pidfile.read_text()), signal.SIGKILL)
+                except (ProcessLookupError, ValueError):
+                    pass
+
+        self.addCleanup(cleanup)
+        script = (
+            "import os, sys, time\n"
+            "if os.fork() == 0:\n"
+            "    os.setsid()\n"
+            "    open(sys.argv[1], 'w').write(str(os.getpid()))\n"
+            "    print('descendant started', flush=True)\n"
+            "    time.sleep(60)\n"
+            "    os._exit(0)\n"
+            "time.sleep(60)\n"
+        )
+        r, elapsed = self.drive(script, timeout=2, hard_limit=20, argv=(str(pidfile),))
+        self.assertEqual((r["execution_status"], r["result_status"]), ("executed", "unknown"))
+        self.assertIn("timed out after 2s", r["limitations"])
+        self.assertTrue(any("could not be fully collected" in x for x in r["limitations"]), r["limitations"])
+        self.assertTrue((self.base / "out" / r["evidence_ref"]).is_file())
+        self.assertLess(elapsed, 2 + 5 + 4)
 
 
 class Profiles(unittest.TestCase):
