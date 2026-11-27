@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import io
 import json
+import os
 import re
 import tempfile
 import unittest
@@ -223,6 +224,63 @@ class FileScanCap(TempRepo):
             self.assertTrue(any("file scan stopped at 3 files" in w for w in info["warnings"]), info["warnings"])
             report, _ = verify_mod.verify(self.root, "minimal", out=self.base / "out")
         self.assertTrue(any("file scan stopped" in x for x in report["limitations"]), report["limitations"])
+
+
+def symlink_or_skip(tc: unittest.TestCase, target: Path, link: Path) -> None:
+    try:
+        os.symlink(target, link)
+    except (OSError, NotImplementedError) as e:
+        tc.skipTest(f"symlinks unavailable: {e}")
+
+
+def tree(path: Path) -> dict[str, bytes]:
+    return {p.relative_to(path).as_posix(): p.read_bytes() if p.is_file() else b"<dir>" for p in path.rglob("*")}
+
+
+class QualityDirSymlinks(TempRepo):
+    """N-2: eqk never writes or deletes through a symlink in .quality."""
+
+    def victim(self) -> Path:
+        v = self.base / "victim"
+        (v / "evidence").mkdir(parents=True)
+        (v / "evidence/data.txt").write_text("precious\n")
+        (v / "applied.json").write_text('{"created": []}')
+        return v
+
+    def run_cli(self, *args: str) -> int:
+        with mock.patch("sys.stderr", new_callable=io.StringIO) as err:
+            code = cli.main([*args, str(self.root)])
+        self.stderr = err.getvalue()
+        return code
+
+    def test_revert_refuses_symlinked_quality_dir(self) -> None:
+        v = self.victim()
+        symlink_or_skip(self, Path("../victim"), self.root / ".quality")
+        before = tree(v)
+        self.assertEqual(self.run_cli("revert"), 4, self.stderr)
+        self.assertEqual(tree(v), before)
+
+    def test_apply_refuses_symlinked_quality_dir(self) -> None:
+        v = self.base / "victim"
+        v.mkdir()
+        symlink_or_skip(self, Path("../victim"), self.root / ".quality")
+        self.assertEqual(self.run_cli("apply", "--profile", "minimal", "--yes"), 4, self.stderr)
+        self.assertEqual(list(v.iterdir()), [])
+
+    def test_verify_refuses_symlinked_report(self) -> None:
+        adoption.apply(self.root, "minimal")
+        target = self.base / "somefile"
+        target.write_text("mine\n")
+        (self.root / ".quality/reports").mkdir()
+        symlink_or_skip(self, target, self.root / ".quality/reports/latest.json")
+        self.assertEqual(self.run_cli("verify"), 4, self.stderr)
+        self.assertEqual(target.read_text(), "mine\n")
+
+    def test_normal_adopted_repo_is_safe(self) -> None:
+        self.assertTrue(adoption.quality_dir_safe(self.root)[0])  # no .quality yet
+        adoption.apply(self.root, "minimal")
+        ok, why = adoption.quality_dir_safe(self.root)
+        self.assertTrue(ok, why)
 
 
 class Profiles(unittest.TestCase):

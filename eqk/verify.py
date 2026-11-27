@@ -15,7 +15,7 @@ from pathlib import Path
 
 from . import __version__
 from . import profiles as profiles_mod
-from .adoption import CONFIG, QUALITY_DIR, check_applicability
+from .adoption import CONFIG, QUALITY_DIR, check_applicability, quality_dir_safe
 from .inspection import detect
 from .util import git_state, project_id, redact, resolve_tool
 
@@ -222,6 +222,9 @@ def verify(
 
     if out is None:
         if cfg_path.is_file():
+            ok, why = quality_dir_safe(root)  # an explicit --out is the user's choice, not checked
+            if not ok:
+                raise RuntimeError(why)
             out = root / QUALITY_DIR
         else:  # verify-only on an un-adopted repo: write nothing inside it
             out = Path(tempfile.mkdtemp(prefix="eqk-"))

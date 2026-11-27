@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import difflib
 import json
+import os
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
@@ -37,6 +38,28 @@ def check_applicability(check: dict, info: dict) -> tuple[bool, str]:
     if req and not info["configs"].get(req):
         return False, f"requires {req} (not present in repo)"
     return True, "applicable"
+
+
+def quality_dir_safe(root: Path) -> tuple[bool, str]:
+    """.quality is eqk's own namespace: a symlink anywhere in it is never legitimate.
+
+    A cloned repo can carry `.quality -> ../elsewhere`; following it would let eqk write and
+    delete outside the repository. A missing .quality is safe.
+    """
+    q = root / QUALITY_DIR
+    if not os.path.lexists(q):
+        return True, "no .quality directory"
+    if q.is_symlink():
+        return False, f"{QUALITY_DIR} is a symlink; eqk refuses to write or delete through it"
+    if not q.resolve().is_relative_to(root.resolve()):
+        return False, f"{QUALITY_DIR} resolves outside the repository; refusing"
+    for dirpath, dirnames, filenames in os.walk(q, followlinks=False):
+        for name in dirnames + filenames:
+            full = os.path.join(dirpath, name)
+            if os.path.islink(full):
+                rel = Path(full).relative_to(root).as_posix()
+                return False, f"{rel} is a symlink inside {QUALITY_DIR}; eqk refuses to write or delete through it"
+    return True, "no symlinks in .quality"
 
 
 def build_plan(root: Path, profile_id: str) -> dict:
@@ -156,6 +179,9 @@ def apply(root: Path, profile_id: str) -> dict:
     plan = build_plan(root, profile_id)
     if (root / MANIFEST).exists():
         raise RuntimeError("already applied (.quality/applied.json exists); run `eqk revert` first")
+    ok, why = quality_dir_safe(root)
+    if not ok:
+        raise RuntimeError(why)
     created: list[dict] = []
     manifest = {
         "eqk_version": __version__,
@@ -189,6 +215,11 @@ def revert(root: Path, force: bool = False) -> dict:
     mpath = root / MANIFEST
     if not mpath.is_file():
         raise RuntimeError("nothing to revert: .quality/applied.json not found")
+    ok, why = quality_dir_safe(root)  # also covers a symlinked manifest
+    if not ok:
+        raise RuntimeError(why)
+    if mpath.is_symlink():
+        raise RuntimeError(f"{MANIFEST} is a symlink; refusing")
     manifest = json.loads(mpath.read_text(encoding="utf-8"))
     removed, kept = [], []
     root_resolved = root.resolve()
