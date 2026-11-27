@@ -25,6 +25,10 @@
 - **Windows timeout kill reaches only the direct child.** On POSIX a timed-out (or
   interrupted) check's whole process group is killed; on Windows only the process eqk
   started is killed, so processes it started (e.g. node under `npm test`) can keep running.
+- **Undoing an adoption with `git reset` leaves run outputs behind.** eqk's ignored run
+  outputs (`.quality/evidence|reports|cache`) stay on disk; a later `apply` treats them as
+  pre-existing and `revert` then keeps them (this fails toward keeping data). Remove them
+  with `git clean -fdX .quality` (capital `-X` removes only ignored files) or by hand.
 
 ## Deliberately not built (per brief §10)
 
