@@ -1,0 +1,12 @@
+{
+  "id": "typescript-web",
+  "version": "0.1.0",
+  "extends": "minimal",
+  "description": "TypeScript web projects: minimal + ESLint when the project already configures it.",
+  "checks": [
+    {"id": "ts.lint", "tool": "eslint", "args": ["."], "applies_to": "typescript", "requires": "eslint_config", "gate": false,
+     "install_hint": "npm install --save-dev eslint",
+     "note": "Only runs when the repo already has an ESLint config; eqk does not invent lint rules for a JS codebase."}
+  ],
+  "scaffold": []
+}

@@ -1,0 +1,4 @@
+removed .quality/eqk.json
+removed .quality/.gitignore
+exit=0
+(empty status above = tree restored)

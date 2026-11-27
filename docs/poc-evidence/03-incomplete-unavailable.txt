@@ -1,0 +1,26 @@
+# Quality result: INCOMPLETE
+profile python-data 0.1.0 · commit 9cac3bc279 · run 20261109T145652Z-bd208c
+
+- ???? py.lint (gate) [unavailable]
+    ✗ tool 'ruff' not found in repo .venv/venv, node_modules/.bin or PATH; eqk does not install tools. Install: pip install ruff
+    · check could not run; result unknown
+- ???? py.test (gate) [unavailable]
+    ✗ tool 'pytest' not found in repo .venv/venv, node_modules/.bin or PATH; eqk does not install tools. Install: pip install pytest
+    · check could not run; result unknown
+- n/a  ts.typecheck (gate) [not_run]
+    · no typescript files detected
+- n/a  js.test (gate) [not_run]
+    · no javascript files detected
+- ???? py.format (info) [unavailable]
+    ✗ tool 'ruff' not found in repo .venv/venv, node_modules/.bin or PATH; eqk does not install tools. Install: pip install ruff
+    · check could not run; result unknown
+- ???? py.types (info) [unavailable]
+    ✗ tool 'mypy' not found in repo .venv/venv, node_modules/.bin or PATH; eqk does not install tools. Install: pip install mypy
+    · check could not run; result unknown
+
+INCOMPLETE: at least one gate check has no passing evidence. This is not a pass.
+
+Limitations:
+- results cover only the checks listed; they are not a statement about overall software correctness
+
+exit=2

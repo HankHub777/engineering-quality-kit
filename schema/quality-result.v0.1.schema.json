@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/engineering-quality-kit/quality-result.v0.1.schema.json",
+  "title": "Engineering Quality Kit — verification result",
+  "description": "One verification run against one repository state. A check may only be 'pass' when it was executed and has an evidence reference.",
+  "type": "object",
+  "required": ["schema_version", "run_id", "generated_at", "producer", "project", "git", "profile", "overall", "checks", "limitations"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": "0.1" },
+    "run_id": { "type": "string", "pattern": "^[0-9]{8}T[0-9]{6}Z-[0-9a-f]{6}$" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "producer": {
+      "type": "object",
+      "required": ["name", "version"],
+      "additionalProperties": false,
+      "properties": { "name": { "const": "eqk" }, "version": { "type": "string" } }
+    },
+    "project": {
+      "type": "object",
+      "required": ["id"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^proj-[0-9a-f]{12}$", "description": "Hash-derived; never a path or repo name." }
+      }
+    },
+    "git": {
+      "type": "object",
+      "required": ["is_repo", "commit", "dirty"],
+      "additionalProperties": false,
+      "properties": {
+        "is_repo": { "type": "boolean" },
+        "commit": { "type": ["string", "null"], "pattern": "^[0-9a-f]{40,64}$" },
+        "dirty": { "type": ["boolean", "null"], "description": "True when the verified tree differs from the commit; the commit then does not fully identify what was checked." }
+      }
+    },
+    "profile": {
+      "type": "object",
+      "required": ["id", "version"],
+      "additionalProperties": false,
+      "properties": { "id": { "type": "string" }, "version": { "type": "string" } }
+    },
+    "overall": {
+      "type": "object",
+      "required": ["status", "counts"],
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": ["pass", "fail", "incomplete"],
+          "description": "pass = every applicable gate check executed and passed. incomplete = no gate failed, but at least one applicable gate check has no passing evidence."
+        },
+        "counts": {
+          "type": "object",
+          "additionalProperties": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "checks": { "type": "array", "items": { "$ref": "#/$defs/check" } },
+    "limitations": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "check": {
+      "type": "object",
+      "required": ["check_id", "tool", "gate", "execution_status", "result_status", "started_at", "duration_ms", "exit_code", "evidence_ref", "summary", "limitations"],
+      "additionalProperties": false,
+      "properties": {
+        "check_id": { "type": "string" },
+        "tool": {
+          "type": "object",
+          "required": ["name", "version", "source"],
+          "additionalProperties": false,
+          "properties": {
+            "name": { "type": "string" },
+            "version": { "type": ["string", "null"] },
+            "source": { "enum": ["repo-venv", "repo-node_modules", "PATH", null] }
+          }
+        },
+        "gate": { "type": "boolean" },
+        "execution_status": { "enum": ["executed", "not_run", "unavailable"] },
+        "result_status": { "enum": ["pass", "fail", "warning", "not_applicable", "unknown"] },
+        "started_at": { "type": ["string", "null"], "format": "date-time" },
+        "duration_ms": { "type": ["integer", "null"], "minimum": 0 },
+        "exit_code": { "type": ["integer", "null"] },
+        "evidence_ref": { "type": ["string", "null"], "description": "Path relative to the report directory." },
+        "summary": {
+          "type": "object",
+          "required": ["errors", "warnings"],
+          "additionalProperties": false,
+          "properties": {
+            "errors": { "type": "array", "items": { "type": "string" } },
+            "warnings": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "limitations": { "type": "array", "items": { "type": "string" } }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "result_status": { "const": "pass" } } },
+          "then": {
+            "properties": {
+              "execution_status": { "const": "executed" },
+              "evidence_ref": { "type": "string" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "execution_status": { "enum": ["not_run", "unavailable"] } } },
+          "then": { "properties": { "result_status": { "enum": ["not_applicable", "unknown"] } } }
+        }
+      ]
+    }
+  }
+}

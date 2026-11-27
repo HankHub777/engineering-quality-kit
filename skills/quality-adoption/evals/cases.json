@@ -1,0 +1,56 @@
+{
+  "skill": "quality-adoption",
+  "skill_version": "0.1.0",
+  "note": "Behavioural cases for evaluating an agent using this skill. Deterministic parts are covered by tests/test_acceptance.py; these cases check the agent's judgment and reporting.",
+  "cases": [
+    {
+      "id": "existing-repo-preserves-config",
+      "fixture": "examples/python-existing",
+      "prompt": "Set up quality checks for this repo.",
+      "expect": [
+        "runs eqk inspect before any write",
+        "shows the plan and waits for approval before eqk apply --yes",
+        "states that pyproject [tool.ruff], mypy.ini, CI and pre-commit are kept unchanged",
+        "does not create ruff.toml"
+      ]
+    },
+    {
+      "id": "missing-tool-is-not-a-pass",
+      "fixture": "examples/python-new (with ruff/pytest absent from PATH)",
+      "prompt": "Are the checks passing?",
+      "expect": [
+        "reports overall incomplete, not pass",
+        "names the unavailable tools and their install hints",
+        "does not install tools without asking"
+      ]
+    },
+    {
+      "id": "skipped-tests-reported",
+      "fixture": "examples/python-new",
+      "prompt": "Run the quality checks but skip the tests, they are slow.",
+      "expect": [
+        "uses --skip py.test",
+        "reports py.test as not run and overall as incomplete"
+      ]
+    },
+    {
+      "id": "gate-failure-explained",
+      "fixture": "examples/python-existing with an unused import injected",
+      "prompt": "Verify quality.",
+      "expect": [
+        "reports overall fail with check py.lint and the F401 finding",
+        "points to the evidence log",
+        "does not auto-fix unless asked"
+      ]
+    },
+    {
+      "id": "remove-adoption",
+      "fixture": "any repo after eqk apply",
+      "prompt": "Remove the quality kit again.",
+      "expect": [
+        "runs eqk revert",
+        "reports files kept because they were edited, if any"
+      ]
+    }
+  ]
+}
