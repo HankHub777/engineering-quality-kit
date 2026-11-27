@@ -150,16 +150,17 @@ class RevertPreexistingDirs(TempRepo):
 
 class ApplyPartialFailure(TempRepo):
     def test_manifest_written_when_apply_fails_midway(self) -> None:
-        real = adoption.sha256_file
-        calls = {"n": 0}
+        """A-1: the second file's exclusive-create fails; the first file stays revertible."""
+        calls = {"x": 0}
 
-        def flaky(path: Path) -> str:
-            calls["n"] += 1
-            if calls["n"] > 1:
-                raise OSError("disk full")
-            return real(path)
+        def flaky_open(file, mode="r", *args, **kwargs):  # type: ignore[no-untyped-def]
+            if "x" in mode:
+                calls["x"] += 1
+                if calls["x"] == 2:
+                    raise OSError("disk full")
+            return open(file, mode, *args, **kwargs)
 
-        with mock.patch("eqk.adoption.sha256_file", side_effect=flaky):
+        with mock.patch("eqk.adoption.open", side_effect=flaky_open, create=True):
             with self.assertRaises(OSError):
                 adoption.apply(self.root, "minimal")
         manifest = json.loads((self.root / adoption.MANIFEST).read_text())
@@ -168,6 +169,50 @@ class ApplyPartialFailure(TempRepo):
         self.assertTrue(first.exists())
         adoption.revert(self.root)
         self.assertFalse(first.exists())
+
+    def test_file_failing_after_create_is_recorded_and_kept(self) -> None:
+        """N-3: open('x') succeeds but the write fails: the file is in the manifest, revert keeps it."""
+
+        class FailingWrite:
+            def __init__(self, fh):  # type: ignore[no-untyped-def]
+                self.fh = fh
+
+            def __enter__(self):  # type: ignore[no-untyped-def]
+                return self
+
+            def __exit__(self, *exc):  # type: ignore[no-untyped-def]
+                self.fh.close()
+                return False
+
+            def write(self, _data: str) -> int:
+                raise OSError("disk full")
+
+        def failing_open(file, mode="r", *args, **kwargs):  # type: ignore[no-untyped-def]
+            fh = open(file, mode, *args, **kwargs)
+            return FailingWrite(fh) if "x" in mode else fh
+
+        with mock.patch("eqk.adoption.open", side_effect=failing_open, create=True):
+            with self.assertRaises(OSError):
+                adoption.apply(self.root, "minimal")
+        manifest = json.loads((self.root / adoption.MANIFEST).read_text())
+        self.assertEqual(len(manifest["created"]), 1)
+        rel = manifest["created"][0]["path"]
+        self.assertTrue((self.root / rel).exists())
+        res = adoption.revert(self.root)
+        self.assertFalse(res["complete"])
+        self.assertEqual([k["path"] for k in res["kept"]], [rel])
+
+    def test_recorded_hash_matches_written_bytes_for_every_template(self) -> None:
+        (self.root / "a.py").write_text("x = 1\n")
+        (self.root / "README.md").write_text("# x\n")
+        seen = set()
+        for pid in profiles.list_ids():
+            res = adoption.apply(self.root, pid)
+            for item in res["manifest"]["created"]:
+                seen.add(item["path"])
+                self.assertEqual(item["sha256"], adoption.sha256_file(self.root / item["path"]), (pid, item))
+            self.assertTrue(adoption.revert(self.root)["complete"])
+        self.assertTrue({".quality/eqk.json", ".quality/.gitignore", "ruff.toml", ".markdownlint.jsonc"} <= seen, seen)
 
 
 class CliInternalError(TempRepo):

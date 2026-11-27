@@ -8,6 +8,7 @@ what eqk added, and refuses to remove anything a human has since edited.
 from __future__ import annotations
 
 import difflib
+import hashlib
 import json
 import os
 import shutil
@@ -201,9 +202,13 @@ def apply(root: Path, profile_id: str) -> dict:
             if target.exists():  # appeared after planning: still never overwrite
                 continue
             target.parent.mkdir(parents=True, exist_ok=True)
+            # Hash of the bytes about to be written (newline="\n": no translation). The entry is
+            # recorded as soon as the file exists, so a failed write leaves a file revert keeps
+            # as "edited" instead of an unrecorded one.
+            digest = hashlib.sha256(a["content"].encode("utf-8")).hexdigest()
             with open(target, "x", encoding="utf-8", newline="\n") as fh:  # 'x' = fail if it exists
+                created.append({"path": a["path"], "sha256": digest})
                 fh.write(a["content"])
-            created.append({"path": a["path"], "sha256": sha256_file(target)})
     finally:
         # Written even if creation fails midway, so every file already created stays revertible.
         (root / MANIFEST).parent.mkdir(parents=True, exist_ok=True)
