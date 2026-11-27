@@ -400,6 +400,28 @@ class Profiles(unittest.TestCase):
             for sc in p.get("scaffold", []):
                 self.assertTrue(profiles.template(sc["template"]))
 
+    # N-4: (version, sha256 of the verdict-relevant fields of the RESOLVED checks).
+    VERDICT_FIELDS = ("id", "tool", "args", "applies_to", "requires", "gate", "exit_codes")
+    PINNED = {
+        "docs": ("0.1.0", "33a990f7befe3233e3280db751e4eafadfb03134b9ada4e25405a243df6a02f4"),
+        "minimal": ("0.1.1", "19355170c9675ed7377dc4cbf35b750b68d61382d4e36ec6d05be5137578c0b6"),
+        "python-data": ("0.1.1", "b75bc97805b8dd581d14cf569c03d632c1d7bac02b74b732b70e80f52fc05e77"),
+        "typescript-web": ("0.1.1", "136c82aff8cd1b89ad42a4837989c3c7e411c7e2f5eac4a79a317d772df2ade5"),
+    }
+
+    def test_verdict_changes_bump_version(self) -> None:
+        self.assertEqual(set(self.PINNED), set(profiles.list_ids()), "pin every profile")
+        for pid, (version, digest) in self.PINNED.items():
+            p = profiles.load(pid)
+            checks = [{k: ch[k] for k in self.VERDICT_FIELDS if k in ch} for ch in p["checks"]]
+            actual = hashlib.sha256(json.dumps(checks, sort_keys=True).encode()).hexdigest()
+            self.assertEqual(
+                (p["version"], actual),
+                (version, digest),
+                f"profile {pid!r}: its verdict-relevant checks or version changed. If verdicts can change, "
+                f"bump the version of {pid!r} and of every profile that extends it, then update PINNED.",
+            )
+
     def test_extends(self) -> None:
         ids = {ch["id"] for ch in profiles.load("python-data")["checks"]}
         self.assertTrue({"py.lint", "py.test", "py.format", "py.types"} <= ids)

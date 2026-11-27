@@ -1,6 +1,6 @@
 {
   "id": "minimal",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Smallest useful gate: lint + the project's own tests. Safe default for existing repos.",
   "checks": [
     {"id": "py.lint", "tool": "ruff", "args": ["check", "--output-format=concise", "."], "applies_to": "python", "gate": true,
